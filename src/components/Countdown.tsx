@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 interface CountdownProps {
   targetDate: Date;
   cutoffMs: number; // e.g. 30 * 60 * 1000
+  className?: string;
 }
 
-export default function Countdown({ targetDate, cutoffMs }: CountdownProps) {
+export default function Countdown({ targetDate, cutoffMs, className }: CountdownProps) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function Countdown({ targetDate, cutoffMs }: CountdownProps) {
 
   if (remainingToMatch <= 0) {
     return (
-      <span className="pill" style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}>
+      <span className={`pill ${className || ''}`} style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}>
         🔒 Finalizado
       </span>
     );
@@ -43,7 +44,7 @@ export default function Countdown({ targetDate, cutoffMs }: CountdownProps) {
   if (isLocked) {
     return (
       <div
-        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-medium"
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-medium ${className || ''}`}
         style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444' }}
       >
         <span>🔒</span>
@@ -56,7 +57,7 @@ export default function Countdown({ targetDate, cutoffMs }: CountdownProps) {
 
   return (
     <div
-      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-medium"
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[0.6875rem] font-medium ${className || ''}`}
       style={{ background: 'var(--color-green-dim)', color: 'var(--color-green)' }}
     >
       <span>⏱️</span>
