@@ -1,0 +1,19 @@
+{
+  "name": "pollamundialista",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Polla Mundialista - Quiniela automatizada para el Mundial 2026",
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build": "npm run build:client && npm run build:server",
+    "start": "cd server && node dist/index.js",
+    "deploy": "gcloud run deploy pollamundialista --source . --region us-central1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
