@@ -7,7 +7,7 @@ const router = Router();
 
 // Lista de usuarios que ya pagaron (en minúsculas para evitar problemas)
 // Puedes modificar esta lista manualmente con los usernames de quienes paguen.
-const PAID_USERS = ['santiago', 'admin', 'more', 'tetey'];
+const PAID_USERS = ['santiago', 'admin', 'more', 'tetey', 'pablo zapata'];
 
 /**
  * GET /api/leaderboard
