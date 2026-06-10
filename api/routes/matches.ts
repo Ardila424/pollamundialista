@@ -2,9 +2,14 @@ import { Router, Request, Response } from 'express';
 import { getMatches, getMatchById, enrichMatchWithBetStatus, getPhases } from '../services/matchService';
 import { getUserPredictionForMatch } from '../services/predictionService';
 import { scoreMatch } from '../services/scoringService';
+import { syncMatches } from '../services/matchSyncService';
 import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
+
+// Estado en memoria para Lazy Syncing
+let lastSyncTime: number = 0;
+const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutos
 
 /**
  * GET /api/matches
@@ -13,6 +18,19 @@ const router = Router();
 router.get('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   try {
     const { phase, date, status } = req.query;
+
+    // Lazy Syncing: Revisar si han pasado 30 minutos desde la última sincronización
+    const now = Date.now();
+    if (now - lastSyncTime > SYNC_INTERVAL_MS) {
+      console.log('🔄 Ejecutando Lazy Syncing de partidos...');
+      lastSyncTime = now; // Evitar que requests concurrentes disparen múltiples syncs
+      try {
+        await syncMatches();
+      } catch (err) {
+        console.error('Error en Lazy Sync:', err);
+        lastSyncTime = 0; // Permitir reintento en el próximo request
+      }
+    }
 
     const matches = await getMatches({
       phase: phase as string | undefined,

@@ -1,52 +1,73 @@
-# Polla Mundialista 🏆
+# React + TypeScript + Vite
 
-Quiniela mundialista automatizada para el **Mundial 2026**. Predice resultados y compite con tus amigos.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Tech Stack
+Currently, two official plugins are available:
 
-- **Frontend**: React + Vite + TypeScript + Tailwind CSS
-- **Backend**: Express + TypeScript
-- **Database**: Supabase (PostgreSQL)
-- **Deployment**: Google Cloud Run
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Setup
+## React Compiler
 
-### 1. Clonar y configurar
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-```bash
-cp .env.example .env
-# Editar .env con tus credenciales de Supabase
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-### 2. Crear tablas en Supabase
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-Ejecuta el contenido de `supabase/schema.sql` en el **SQL Editor** de tu proyecto Supabase.
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-### 3. Instalar dependencias
-
-```bash
-npm install                  # Root (concurrently)
-cd server && npm install     # Backend
-cd ../client && npm install  # Frontend
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-
-### 4. Desarrollo local
-
-```bash
-npm run dev   # Arranca server (3001) + client (5173) en paralelo
-```
-
-### 5. Deploy a Cloud Run
-
-```bash
-npm run deploy
-```
-
-## Variables de entorno
-
-| Variable | Descripción |
-|---|---|
-| `SUPABASE_URL` | URL de tu proyecto Supabase |
-| `SUPABASE_SERVICE_KEY` | Service role key de Supabase |
-| `JWT_SECRET` | Secreto para firmar tokens JWT |
-| `PORT` | Puerto del servidor (auto en Cloud Run) |

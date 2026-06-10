@@ -2,7 +2,7 @@
 // API Client — wrapper sobre fetch
 // ============================================
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 
 class ApiClient {
   private token: string | null = null;
