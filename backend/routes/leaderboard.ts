@@ -5,6 +5,10 @@ import { LeaderboardEntry } from '../types.js';
 
 const router = Router();
 
+// Lista de usuarios que ya pagaron (en minúsculas para evitar problemas)
+// Puedes modificar esta lista manualmente con los usernames de quienes paguen.
+const PAID_USERS = ['santiago', 'admin']; 
+
 /**
  * GET /api/leaderboard
  * Ranking público de todos los usuarios ordenados por puntos acumulados.
@@ -43,6 +47,7 @@ router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<vo
         total_points: scoredPreds.reduce((sum, p) => sum + (p.points || 0), 0),
         correct_predictions: correctPreds.length,
         total_predictions: userPreds.length,
+        has_paid: PAID_USERS.includes(user.username.toLowerCase()),
       };
     });
 

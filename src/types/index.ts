@@ -68,6 +68,7 @@ export interface LeaderboardEntry {
   correct_predictions: number;
   total_predictions: number;
   title?: string;
+  has_paid?: boolean;
 }
 
 export type PredictionChoice = 'Local' | 'Empate' | 'Visitante';

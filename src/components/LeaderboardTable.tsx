@@ -73,6 +73,15 @@ export default function LeaderboardTable({ entries, isLoading }: LeaderboardTabl
                     {entry.title}
                   </span>
                 )}
+                {entry.has_paid ? (
+                  <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold" style={{ background: 'var(--color-green-dim)', color: 'var(--color-green)' }}>
+                    💰 Pagó
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold" style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}>
+                    ⏳ Pendiente
+                  </span>
+                )}
                 {isCurrentUser && (
                   <span className="pill" style={{ background: 'var(--color-gold-dim)', color: 'var(--color-gold)', fontSize: '0.5625rem' }}>
                     TÚ
