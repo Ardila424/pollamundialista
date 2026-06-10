@@ -10,6 +10,8 @@ import leaderboardRoutes from './routes/leaderboard';
 import syncRoutes from './routes/sync';
 import { seedMatches } from './services/matchService';
 
+import groupRoutes from './routes/groups';
+
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -25,7 +27,7 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/matches/sync', syncRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
-app.use('/api/groups', require('./routes/groups').default);
+app.use('/api/groups', groupRoutes);
 
 // ---- Health check ----
 app.get('/api/health', (_req, res) => {
