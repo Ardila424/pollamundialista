@@ -1,6 +1,6 @@
-import supabase from '../config/supabase';
-import { Prediction } from '../types';
-import { isMatchOpenForBets, getMatchById } from './matchService';
+import supabase from '../config/supabase.js';
+import { Prediction } from '../types.js';
+import { isMatchOpenForBets, getMatchById } from './matchService.js';
 
 /**
  * Guardar o actualizar un pronóstico.

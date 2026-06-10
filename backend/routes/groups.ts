@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getGroupStandings } from '../services/groupService';
-import { authMiddleware } from '../middleware/auth';
+import { getGroupStandings } from '../services/groupService.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 

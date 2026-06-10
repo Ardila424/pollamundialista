@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { savePrediction, getUserPredictions, deletePrediction } from '../services/predictionService';
-import { authMiddleware } from '../middleware/auth';
+import { savePrediction, getUserPredictions, deletePrediction } from '../services/predictionService.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 

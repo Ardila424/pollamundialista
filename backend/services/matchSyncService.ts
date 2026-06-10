@@ -1,5 +1,5 @@
-import supabase from '../config/supabase';
-import { scoreMatch } from './scoringService';
+import supabase from '../config/supabase.js';
+import { scoreMatch } from './scoringService.js';
 
 const EXTERNAL_WORLD_CUP_API_URL = process.env.EXTERNAL_WORLD_CUP_API_URL || 'https://worldcup26.ir';
 

@@ -1,6 +1,6 @@
 import 'dotenv/config';
-import supabase from './config/supabase';
-import { worldCup2026Matches } from './data/worldcup2026';
+import supabase from './config/supabase.js';
+import { worldCup2026Matches } from './data/worldcup2026.js';
 
 async function run() {
   console.log('Actualizando partidos en Supabase...');

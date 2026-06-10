@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { syncMatches } from '../services/matchSyncService';
+import { syncMatches } from '../services/matchSyncService.js';
 
 const router = Router();
 

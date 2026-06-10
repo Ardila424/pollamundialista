@@ -1,6 +1,6 @@
-import supabase from '../config/supabase';
-import { worldCup2026Matches } from '../data/worldcup2026';
-import { Match, MatchWithBetStatus } from '../types';
+import supabase from '../config/supabase.js';
+import { worldCup2026Matches } from '../data/worldcup2026.js';
+import { Match, MatchWithBetStatus } from '../types.js';
 
 const THIRTY_MINS_MS = 30 * 60 * 1000;
 

@@ -1,4 +1,4 @@
-import supabase from '../config/supabase';
+import supabase from '../config/supabase.js';
 
 /**
  * Calcula y asigna puntos a todos los pronósticos de un partido finalizado.

@@ -3,14 +3,14 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 
-import authRoutes from './routes/auth';
-import matchRoutes from './routes/matches';
-import predictionRoutes from './routes/predictions';
-import leaderboardRoutes from './routes/leaderboard';
-import syncRoutes from './routes/sync';
-import { seedMatches } from './services/matchService';
+import authRoutes from './routes/auth.js';
+import matchRoutes from './routes/matches.js';
+import predictionRoutes from './routes/predictions.js';
+import leaderboardRoutes from './routes/leaderboard.js';
+import syncRoutes from './routes/sync.js';
+import { seedMatches } from './services/matchService.js';
 
-import groupRoutes from './routes/groups';
+import groupRoutes from './routes/groups.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);

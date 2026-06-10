@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
-import supabase from '../config/supabase';
-import { authMiddleware } from '../middleware/auth';
-import { LeaderboardEntry } from '../types';
+import supabase from '../config/supabase.js';
+import { authMiddleware } from '../middleware/auth.js';
+import { LeaderboardEntry } from '../types.js';
 
 const router = Router();
 

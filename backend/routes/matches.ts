@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { getMatches, getMatchById, enrichMatchWithBetStatus, getPhases } from '../services/matchService';
-import { getUserPredictionForMatch } from '../services/predictionService';
-import { scoreMatch } from '../services/scoringService';
-import { syncMatches } from '../services/matchSyncService';
-import { authMiddleware } from '../middleware/auth';
+import { getMatches, getMatchById, enrichMatchWithBetStatus, getPhases } from '../services/matchService.js';
+import { getUserPredictionForMatch } from '../services/predictionService.js';
+import { scoreMatch } from '../services/scoringService.js';
+import { syncMatches } from '../services/matchSyncService.js';
+import { authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
 

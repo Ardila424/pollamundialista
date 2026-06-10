@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { JwtPayload } from '../types';
+import { JwtPayload } from '../types.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'polla-mundial-dev-secret';
 
