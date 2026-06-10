@@ -1,73 +1,78 @@
-# React + TypeScript + Vite
+# 🏆 Polla Mundialista 2026
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+¡La polla más dura del universo! Una aplicación web interactiva para gestionar pronósticos de partidos, calcular puntuaciones automáticamente y competir en una tabla de clasificación (ranking) con amigos.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologías Usadas (Tech Stack)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Frontend
+- **React 19** + **Vite**
+- **TypeScript**: Para un tipado estricto y código seguro.
+- **TailwindCSS v4**: Para utilidades de diseño y un maquetado ágil.
+- **Vanilla CSS**: Variables CSS globales, animaciones y estilos de "Glassmorphism" personalizados (`index.css`).
 
-## React Compiler
+### Backend
+- **Node.js** + **Express.js**
+- **Supabase (PostgreSQL)**: Almacenamiento de base de datos, consultas con `supabase-js`.
+- **JWT (JSON Web Tokens)**: Para autenticación segura sin usar el sistema de Auth nativo de Supabase (autenticación propia basada en PIN numérico).
+- **ES Modules (ESM)**: Uso estricto de ESM tanto en desarrollo como en producción.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Despliegue (Deployment)
+- **Vercel**: Alojamiento tanto del frontend (Static Assets) como del backend mediante **Vercel Serverless Functions** (`/api`).
 
-## Expanding the ESLint configuration
+## ✨ Funcionalidades Principales
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. **Dashboard de Partidos**: 
+   - Visualización de todos los partidos del mundial.
+   - Banderas de todos los países.
+   - Estados en tiempo real: `Pendiente`, `En Vivo` (con animación de pulso) y `Finalizado`.
+2. **Sistema de Apuestas**:
+   - Bloqueo automático de apuestas 30 minutos antes del inicio de cada partido.
+   - Modificación y cancelación de apuestas si el partido aún no está bloqueado.
+   - Puntuación automática: 3 puntos por acertar el ganador o el empate.
+3. **Ranking (Leaderboard)**:
+   - Ordenamiento por puntos y cantidad de aciertos.
+   - Indicador de estado de pago (💰 Pagó / ⏳ Pendiente de pago).
+   - Títulos dinámicos y divertidos (ej. "El Nostradamus", "El Salado", "El Tibio").
+4. **Login con PIN**:
+   - Sistema sin contraseñas largas. El usuario digita su PIN numérico en una cuadrícula interactiva.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## 🛠 Instalación y Ejecución Local
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+### Requisitos previos
+- Node.js (v18+)
+- Cuenta de Supabase con el esquema creado.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Variables de Entorno (`.env`)
+En la raíz del proyecto, debes tener un archivo `.env` con las siguientes variables:
+```env
+SUPABASE_URL=tu_supabase_url
+SUPABASE_SERVICE_KEY=tu_supabase_service_role_key
+JWT_SECRET=tu_secreto_para_jwt
+EXTERNAL_WORLD_CUP_API_URL=https://worldcup26.ir # Opcional (fallback configurado)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Comandos
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. **Instalar dependencias**:
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2. **Correr servidor de desarrollo** (Frontend en puerto 5173 + Backend en puerto 3001):
+   ```bash
+   npm run dev
+   ```
+
+3. **Construcción para producción**:
+   ```bash
+   npm run build
+   ```
+
+## 📂 Estructura del Proyecto
+
+- `/src`: Código fuente del frontend (Páginas, Componentes, Contextos, Servicios).
+- `/backend`: Código fuente del backend (Express.js, Rutas, Servicios, Base de Datos).
+- `/api`: Carpeta de entrada para Vercel Serverless Functions.
+
+---
+*Hecho con ❤️ para el Mundial 2026.*
