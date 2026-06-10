@@ -79,7 +79,7 @@ export default function LeaderboardTable({ entries, isLoading }: LeaderboardTabl
                   </span>
                 ) : (
                   <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold" style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}>
-                    ⏳ Pendiente
+                    ⏳ Pendiente de pago
                   </span>
                 )}
                 {isCurrentUser && (
