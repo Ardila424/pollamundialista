@@ -126,7 +126,7 @@ router.patch('/:id/result', authMiddleware, async (req: Request, res: Response):
       return;
     }
 
-    const { default: supabase } = await import('../config/supabase');
+    const { default: supabase } = await import('../config/supabase.js');
     const { error } = await supabase
       .from('matches')
       .update({

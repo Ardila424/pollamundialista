@@ -90,7 +90,7 @@ export async function deletePrediction(
   if (match.status === 'En_Progreso') return { success: false, error: 'Este partido ya está en progreso' };
 
   // Validar cutoff (misma regla que savePrediction)
-  const isBetOpen = await import('./matchService').then(m => m.isMatchOpenForBets(match.match_date));
+  const isBetOpen = await import('./matchService.js').then(m => m.isMatchOpenForBets(match.match_date));
   if (!isBetOpen) {
     return { success: false, error: 'Ya pasó el límite de tiempo (30 min antes del pitazo inicial)' };
   }
