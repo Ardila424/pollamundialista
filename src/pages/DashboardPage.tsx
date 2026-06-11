@@ -181,8 +181,33 @@ export default function DashboardPage() {
                 >
                   ${(leaderboard.length * 30000).toLocaleString('es-CO')} COP
                 </div>
-                <div className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                <div className="text-xs mt-1.5 mb-3" style={{ color: 'var(--color-text-muted)' }}>
                   {leaderboard.length} {leaderboard.length === 1 ? 'jugador inscrito' : 'jugadores inscritos'} × $30.000
+                </div>
+
+                {/* Prize distribution */}
+                <div className="flex justify-center gap-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
+                  <div className="flex-1 max-w-[110px]">
+                    <div className="text-lg mb-0.5">🥇</div>
+                    <div className="text-sm font-extrabold" style={{ color: 'var(--color-gold)' }}>
+                      ${Math.round(leaderboard.length * 30000 * 0.7).toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-[0.5625rem] font-medium" style={{ color: 'var(--color-text-muted)' }}>70%</div>
+                  </div>
+                  <div className="flex-1 max-w-[110px]">
+                    <div className="text-lg mb-0.5">🥈</div>
+                    <div className="text-sm font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+                      ${Math.round(leaderboard.length * 30000 * 0.2).toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-[0.5625rem] font-medium" style={{ color: 'var(--color-text-muted)' }}>20%</div>
+                  </div>
+                  <div className="flex-1 max-w-[110px]">
+                    <div className="text-lg mb-0.5">🥉</div>
+                    <div className="text-sm font-extrabold" style={{ color: 'var(--color-text-secondary)' }}>
+                      ${Math.round(leaderboard.length * 30000 * 0.1).toLocaleString('es-CO')}
+                    </div>
+                    <div className="text-[0.5625rem] font-medium" style={{ color: 'var(--color-text-muted)' }}>10%</div>
+                  </div>
                 </div>
               </div>
             )}
