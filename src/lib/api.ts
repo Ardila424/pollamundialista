@@ -123,6 +123,30 @@ class ApiClient {
     const query = params.toString();
     return this.request<any[]>(`/logs${query ? `?${query}` : ''}`);
   }
+
+  // ---- Match Predictions ----
+  async getMatchPredictions(matchId: number) {
+    return this.request<any[]>(`/matches/${matchId}/predictions`);
+  }
+
+  // ---- Admin Panel ----
+  async getAdminUsers() {
+    return this.request<any[]>('/admin/users');
+  }
+
+  async setPaymentStatus(userId: number, hasPaid: boolean) {
+    return this.request<{ message: string }>('/admin/set-payment', {
+      method: 'POST',
+      body: JSON.stringify({ userId, hasPaid }),
+    });
+  }
+
+  async resetUserPin(username: string, newPin: string) {
+    return this.request<{ message: string }>('/admin/reset-pin', {
+      method: 'POST',
+      body: JSON.stringify({ username, newPin }),
+    });
+  }
 }
 
 export const api = new ApiClient();

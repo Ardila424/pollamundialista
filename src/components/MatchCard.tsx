@@ -53,6 +53,26 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
     (match.user_prediction as PredictionChoice) || null
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
+  const [groupBets, setGroupBets] = useState<any[]>([]);
+  const [loadingGroup, setLoadingGroup] = useState(false);
+
+  const toggleGroupBets = async () => {
+    if (showGroup) {
+      setShowGroup(false);
+      return;
+    }
+    setShowGroup(true);
+    setLoadingGroup(true);
+    try {
+      const res = await api.getMatchPredictions(match.id);
+      setGroupBets(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingGroup(false);
+    }
+  };
 
   const isFinished = match.status === 'Finalizado';
   const isInProgress = match.status === 'En_Progreso';
@@ -195,7 +215,7 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
               ) : (
                 <Countdown 
                   targetDate={matchDate} 
-                  cutoffMs={30 * 60 * 1000} 
+                  cutoffMs={5 * 60 * 1000} 
                   className={!isOpen ? "text-[#EF4444]" : ""}
                 />
               )}
@@ -246,6 +266,100 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
         {(isFinished || (!isOpen && match.status !== 'Pendiente')) && !match.user_prediction && (
           <div className="text-center mt-3">
             <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>— No apostó —</span>
+          </div>
+        )}
+
+        {/* Voting Trends (Tendencias) */}
+        {match.prediction_trends && match.prediction_trends.total_bets > 0 && (
+          <div className="mt-3.5 pt-3 border-t border-[var(--color-border)]">
+            <div className="flex items-center justify-between text-[10px] font-medium text-[var(--color-text-muted)] mb-1">
+              <span>📊 Tendencia de apuestas</span>
+              <span>{match.prediction_trends.total_bets} {match.prediction_trends.total_bets === 1 ? 'voto' : 'votos'}</span>
+            </div>
+            {/* Visual stacked bar */}
+            <div className="flex h-2 w-full rounded-full overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] mb-1.5">
+              {match.prediction_trends.Local > 0 && (
+                <div 
+                  style={{ width: `${match.prediction_trends.Local}%`, background: 'var(--color-gold)' }} 
+                  title={`Local: ${match.prediction_trends.Local}%`}
+                />
+              )}
+              {match.prediction_trends.Empate > 0 && (
+                <div 
+                  style={{ width: `${match.prediction_trends.Empate}%`, background: '#94A3B8' }} 
+                  title={`Empate: ${match.prediction_trends.Empate}%`}
+                />
+              )}
+              {match.prediction_trends.Visitante > 0 && (
+                <div 
+                  style={{ width: `${match.prediction_trends.Visitante}%`, background: 'var(--color-cyan)' }} 
+                  title={`Visitante: ${match.prediction_trends.Visitante}%`}
+                />
+              )}
+            </div>
+            {/* Labels */}
+            <div className="flex justify-between text-[9px] text-[var(--color-text-secondary)] font-semibold">
+              <span className="flex items-center gap-0.5">🏠 {match.prediction_trends.Local}%</span>
+              <span className="flex items-center gap-0.5">🤝 {match.prediction_trends.Empate}%</span>
+              <span className="flex items-center gap-0.5">✈️ {match.prediction_trends.Visitante}%</span>
+            </div>
+          </div>
+        )}
+
+        {/* Toggle show group bets (Only when closed) */}
+        {!isOpen && (
+          <div className="mt-3.5 text-center">
+            <button
+              onClick={toggleGroupBets}
+              className="text-[11px] font-bold py-1 px-3 rounded-lg flex items-center justify-center gap-1 mx-auto transition-all"
+              style={{
+                background: showGroup ? 'var(--color-surface)' : 'rgba(255, 215, 0, 0.06)',
+                color: 'var(--color-gold)',
+                border: '1px solid var(--color-border-gold)',
+              }}
+            >
+              {showGroup ? '🙈 Ocultar apuestas' : '👥 Ver apuestas del grupo'}
+            </button>
+            
+            {showGroup && (
+              <div className="mt-3 text-left">
+                <div className="text-[10px] font-bold text-[var(--color-text-muted)] mb-2 flex items-center justify-between uppercase tracking-wider">
+                  <span>👥 Apuestas</span>
+                  <span>{groupBets.length} {groupBets.length === 1 ? 'voto' : 'votos'}</span>
+                </div>
+                {loadingGroup ? (
+                  <div className="text-center py-3 text-[10px] text-[var(--color-text-muted)] flex items-center justify-center gap-1.5">
+                    <span className="animate-spin text-sm">🔄</span> Cargando...
+                  </div>
+                ) : groupBets.length === 0 ? (
+                  <div className="text-center py-2 text-[10px] text-[var(--color-text-muted)] italic">
+                    Nadie apostó
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {groupBets.map((bet) => {
+                      const choiceEmoji = bet.prediction === 'Local' ? '🏠' : bet.prediction === 'Visitante' ? '✈️' : '🤝';
+                      const ptsText = bet.points !== null ? ` (+${bet.points} pts)` : '';
+                      return (
+                        <div 
+                          key={bet.username} 
+                          className="flex justify-between items-center py-1 px-1.5 rounded text-[11px]"
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                          }}
+                        >
+                          <span className="font-semibold text-[var(--color-text-secondary)]">{bet.username}</span>
+                          <span className="font-bold flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
+                            {choiceEmoji} {bet.prediction}{ptsText}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

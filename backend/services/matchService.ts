@@ -2,7 +2,7 @@ import supabase from '../config/supabase.js';
 import { worldCup2026Matches } from '../data/worldcup2026.js';
 import { Match, MatchWithBetStatus } from '../types.js';
 
-const THIRTY_MINS_MS = 30 * 60 * 1000;
+const FIVE_MINS_MS = 5 * 60 * 1000;
 
 /**
  * Inicializa la tabla de partidos con datos del Mundial 2026
@@ -104,7 +104,7 @@ export async function getMatchById(matchId: number): Promise<Match | null> {
  */
 export function isMatchOpenForBets(matchDate: string): boolean {
   const now = new Date();
-  const cutoff = new Date(new Date(matchDate).getTime() - THIRTY_MINS_MS);
+  const cutoff = new Date(new Date(matchDate).getTime() - FIVE_MINS_MS);
   return now < cutoff;
 }
 
@@ -113,7 +113,7 @@ export function isMatchOpenForBets(matchDate: string): boolean {
  */
 export function getTimeRemainingMs(matchDate: string): number | null {
   const now = new Date();
-  const cutoff = new Date(new Date(matchDate).getTime() - THIRTY_MINS_MS);
+  const cutoff = new Date(new Date(matchDate).getTime() - FIVE_MINS_MS);
   const remaining = cutoff.getTime() - now.getTime();
   return remaining > 0 ? remaining : null;
 }

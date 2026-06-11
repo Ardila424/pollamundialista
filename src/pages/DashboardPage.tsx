@@ -57,11 +57,67 @@ export default function DashboardPage() {
     try { setLeaderboard(await api.getLeaderboard()); } catch { } finally { setLbLoading(false); }
   }, []);
 
+  // Admin Panel states
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [adminUsersLoading, setAdminUsersLoading] = useState(false);
+  const [adminSubTab, setAdminSubTab] = useState<'payments' | 'pin' | 'activity'>('payments');
+  const [resetUsername, setResetUsername] = useState('');
+  const [resetPin, setResetPin] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+
+  const loadAdminUsers = useCallback(async () => {
+    setAdminUsersLoading(true);
+    try {
+      const res = await api.getAdminUsers();
+      setAdminUsers(res);
+    } catch (err) {
+      console.error("Error loading admin users", err);
+    } finally {
+      setAdminUsersLoading(false);
+    }
+  }, []);
+
+  const handleTogglePayment = async (userId: number, currentPaid: boolean) => {
+    try {
+      await api.setPaymentStatus(userId, !currentPaid);
+      setAdminUsers(prev => prev.map(u => u.id === userId ? { ...u, has_paid: !currentPaid } : u));
+      loadLeaderboard();
+    } catch (err: any) {
+      alert(err.message || 'Error al actualizar pago');
+    }
+  };
+
+  const handleResetPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetUsername || !resetPin) return;
+    if (!/^\d{4}$/.test(resetPin)) {
+      setResetError('El PIN debe tener exactamente 4 dígitos');
+      setResetMessage('');
+      return;
+    }
+    setIsResetting(true);
+    setResetError('');
+    setResetMessage('');
+    try {
+      const res = await api.resetUserPin(resetUsername, resetPin);
+      setResetMessage(res.message || 'PIN reseteado con éxito');
+      setResetPin('');
+      setResetUsername('');
+    } catch (err: any) {
+      setResetError(err.message || 'Error al resetear PIN');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   useEffect(() => { loadPhases(); loadMatches(); loadLeaderboard(); }, [loadPhases, loadMatches, loadLeaderboard]);
   useEffect(() => {
     if (activeTab === 'pronosticos') loadPredictions();
     if (activeTab === 'ranking') loadLeaderboard();
-  }, [activeTab, loadPredictions, loadLeaderboard]);
+    if (activeTab === 'admin') loadAdminUsers();
+  }, [activeTab, loadPredictions, loadLeaderboard, loadAdminUsers]);
 
   // Group matches by date
   const groupedMatches = matches.reduce<Record<string, Match[]>>((groups, match) => {
@@ -84,7 +140,7 @@ export default function DashboardPage() {
     { id: 'grupos', label: 'Grupos', icon: '📊' },
     { id: 'eliminatorias', label: 'Llaves', icon: '🌳' },
     { id: 'ranking', label: 'Ranking', icon: '🏆' },
-    ...(isAdmin ? [{ id: 'actividad' as TabType, label: 'Actividad', icon: '📜' }] : []),
+    ...(isAdmin ? [{ id: 'admin' as TabType, label: 'Admin', icon: '👑' }] : []),
   ];
 
   return (
@@ -418,24 +474,199 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ══ TAB: ACTIVIDAD (Admin Only) ══ */}
-        {activeTab === 'actividad' && isAdmin && (
+        {/* ══ TAB: ADMIN (Admin Only) ══ */}
+        {activeTab === 'admin' && isAdmin && (
           <div className="animate-fade-in">
+            {/* Header */}
             <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3" style={{ background: 'var(--color-cyan-dim)' }}>
-                <span className="text-2xl">📜</span>
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3 animate-pulse-soft" style={{ background: 'var(--color-gold-dim)' }}>
+                <span className="text-2xl">👑</span>
               </div>
               <h2
                 className="text-xl font-extrabold"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-cyan)' }}
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-gold)' }}
               >
-                Registro de Actividad
+                Panel de Administración
               </h2>
               <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
-                Historial completo de todas las apuestas
+                Control total de la polla mundialista
               </p>
             </div>
-            <ActivityFeed />
+
+            {/* Sub navigation pills */}
+            <div className="flex gap-2 justify-center mb-6 overflow-x-auto pb-2 scrollbar-hide">
+              <button
+                onClick={() => setAdminSubTab('payments')}
+                className={`phase-chip ${adminSubTab === 'payments' ? 'active' : ''}`}
+                style={{ fontSize: '0.8125rem' }}
+              >
+                💰 Control de Pagos
+              </button>
+              <button
+                onClick={() => setAdminSubTab('pin')}
+                className={`phase-chip ${adminSubTab === 'pin' ? 'active' : ''}`}
+                style={{ fontSize: '0.8125rem' }}
+              >
+                🔑 Reiniciar PIN
+              </button>
+              <button
+                onClick={() => setAdminSubTab('activity')}
+                className={`phase-chip ${adminSubTab === 'activity' ? 'active' : ''}`}
+                style={{ fontSize: '0.8125rem' }}
+              >
+                📜 Actividad
+              </button>
+            </div>
+
+            {/* Sub-tab: Control de Pagos */}
+            {adminSubTab === 'payments' && (
+              <div className="glass-strong rounded-2xl p-5 border border-[var(--color-border)]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">💰 Registro de Pagos</h3>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">Marca a los jugadores que ya entregaron los $30.000 COP para actualizar la bolsa de premios y el ranking.</p>
+                </div>
+
+                {adminUsersLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(4)].map((_, i) => (
+                      <div key={i} className="glass-card rounded-2xl animate-shimmer" style={{ height: '56px' }} />
+                    ))}
+                  </div>
+                ) : adminUsers.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-[var(--color-text-muted)]">
+                    No hay usuarios registrados
+                  </div>
+                ) : (
+                  <div className="space-y-2.5">
+                    {adminUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className="glass-card rounded-xl p-3 flex items-center justify-between transition-all"
+                        style={{ background: 'rgba(255, 255, 255, 0.01)' }}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold uppercase"
+                            style={{ background: 'var(--color-gold-dim)', color: 'var(--color-gold)' }}
+                          >
+                            {u.username.charAt(0)}
+                          </div>
+                          <div>
+                            <span className="font-bold text-sm text-[var(--color-text-primary)]">{u.username}</span>
+                            <div className="text-[10px] text-[var(--color-text-muted)]">
+                              Registrado: {new Date(u.created_at).toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleTogglePayment(u.id, u.has_paid)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shrink-0"
+                          style={{
+                            background: u.has_paid ? 'var(--color-green-dim)' : 'var(--color-red-dim)',
+                            color: u.has_paid ? 'var(--color-green)' : 'var(--color-red)',
+                            borderColor: u.has_paid ? 'rgba(74, 222, 128, 0.2)' : 'rgba(248, 113, 113, 0.2)',
+                          }}
+                        >
+                          {u.has_paid ? '💰 PAGÓ' : '⏳ PENDIENTE'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sub-tab: Reiniciar PIN */}
+            {adminSubTab === 'pin' && (
+              <div className="glass-strong rounded-2xl p-5 border border-[var(--color-border)] max-w-md mx-auto">
+                <div className="mb-5 text-center">
+                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">🔑 Reiniciar PIN de Usuario</h3>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">Asigna un PIN temporal de 4 dígitos a un jugador si olvidó su contra.</p>
+                </div>
+
+                <form onSubmit={handleResetPin} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wider">
+                      Usuario a resetear
+                    </label>
+                    <select
+                      value={resetUsername}
+                      onChange={(e) => setResetUsername(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm font-medium"
+                      style={{
+                        background: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                        outline: 'none',
+                      }}
+                      required
+                    >
+                      <option value="">-- Selecciona un jugador --</option>
+                      {adminUsers.map((u) => (
+                        <option key={u.id} value={u.username}>
+                          {u.username}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wider">
+                      Nuevo PIN (4 dígitos)
+                    </label>
+                    <input
+                      type="text"
+                      pattern="\d{4}"
+                      maxLength={4}
+                      value={resetPin}
+                      onChange={(e) => setResetPin(e.target.value.replace(/\D/g, ''))}
+                      placeholder="Ej. 1234"
+                      className="w-full px-4 py-2.5 rounded-xl text-sm font-mono text-center tracking-widest"
+                      style={{
+                        background: 'var(--color-bg-secondary)',
+                        border: '1px solid var(--color-border)',
+                        color: 'var(--color-text-primary)',
+                        outline: 'none',
+                      }}
+                      required
+                    />
+                  </div>
+
+                  {resetMessage && (
+                    <div className="p-3 rounded-lg text-xs font-semibold text-center" style={{ background: 'var(--color-green-dim)', color: 'var(--color-green)' }}>
+                      ✅ {resetMessage}
+                    </div>
+                  )}
+
+                  {resetError && (
+                    <div className="p-3 rounded-lg text-xs font-semibold text-center" style={{ background: 'var(--color-red-dim)', color: 'var(--color-red)' }}>
+                      ❌ {resetError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isResetting || !resetUsername || !resetPin}
+                    className="btn btn-primary w-full py-2.5 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5"
+                    style={{ background: 'var(--color-gold-gradient)', color: '#000000' }}
+                  >
+                    {isResetting ? 'Procesando...' : '🔒 Cambiar PIN'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Sub-tab: Actividad */}
+            {adminSubTab === 'activity' && (
+              <div className="glass-strong rounded-2xl p-5 border border-[var(--color-border)]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">📜 Registro de Actividad</h3>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">Auditoría completa de movimientos de apuestas del grupo.</p>
+                </div>
+                <ActivityFeed />
+              </div>
+            )}
           </div>
         )}
       </main>

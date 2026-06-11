@@ -73,6 +73,24 @@ export default function LeaderboardTable({ entries, isLoading }: LeaderboardTabl
                     {entry.title}
                   </span>
                 )}
+                {entry.streak === 'fire' && (
+                  <span 
+                    className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold animate-pulse-soft flex items-center gap-0.5" 
+                    style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                    title="¡En racha de aciertos! (3+ seguidos)"
+                  >
+                    🔥 Racha
+                  </span>
+                )}
+                {entry.streak === 'ice' && (
+                  <span 
+                    className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold flex items-center gap-0.5" 
+                    style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', border: '1px solid rgba(59, 130, 246, 0.2)' }}
+                    title="Racha fría/salado (3+ fallos seguidos)"
+                  >
+                    ❄️ Salado
+                  </span>
+                )}
                 {entry.has_paid ? (
                   <span className="px-2 py-0.5 rounded-full text-[0.625rem] font-bold" style={{ background: 'var(--color-green-dim)', color: 'var(--color-green)' }}>
                     💰 Pagó

@@ -51,11 +51,11 @@ export async function savePrediction(
     return { success: false, error: 'Este partido ya está en progreso' };
   }
 
-  // 3. REGLA CRÍTICA: Validar que faltan más de 2 horas (UTC)
+  // 3. REGLA CRÍTICA: Validar que faltan más de 5 minutos antes del partido
   if (!isMatchOpenForBets(match.match_date)) {
     return {
       success: false,
-      error: 'El tiempo para apostar ha expirado. Las apuestas se cierran 2 horas antes del partido.',
+      error: 'El tiempo para apostar ha expirado. Las apuestas se cierran 5 minutos antes del partido.',
     };
   }
 

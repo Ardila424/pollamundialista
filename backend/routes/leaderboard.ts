@@ -5,41 +5,69 @@ import { LeaderboardEntry } from '../types.js';
 
 const router = Router();
 
-// Lista de usuarios que ya pagaron (en minúsculas para evitar problemas)
-// Puedes modificar esta lista manualmente con los usernames de quienes paguen.
-const PAID_USERS = ['santiago', 'admin', 'more', 'tetey', 'pablo zapata', 'juliansierra'];
-
 /**
  * GET /api/leaderboard
  * Ranking público de todos los usuarios ordenados por puntos acumulados.
  */
 router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<void> => {
   try {
-    // Obtener todos los usuarios
+    // Obtener todos los usuarios con su estado de pago
     const { data: users, error: usersError } = await supabase
       .from('users')
-      .select('id, username');
+      .select('id, username, has_paid');
 
     if (usersError) {
       res.status(500).json({ error: 'Error al obtener usuarios' });
       return;
     }
 
-    // Obtener todas las predicciones con puntos y pronóstico
+    // Obtener todas las predicciones con puntos, pronóstico y fecha del partido
     const { data: predictions, error: predError } = await supabase
       .from('predictions')
-      .select('user_id, points, prediction');
+      .select('user_id, points, prediction, matches ( match_date )');
 
     if (predError) {
       res.status(500).json({ error: 'Error al obtener predicciones' });
       return;
     }
 
+    // Mapear predicciones con fecha de partido
+    const predsWithDate = (predictions || []).map((p: any) => ({
+      user_id: p.user_id,
+      points: p.points,
+      prediction: p.prediction,
+      match_date: p.matches?.match_date ? new Date(p.matches.match_date).getTime() : 0,
+    }));
+
     // Calcular leaderboard
-    const leaderboard: LeaderboardEntry[] = (users || []).map((user) => {
-      const userPreds = (predictions || []).filter((p) => p.user_id === user.id);
+    const leaderboard: (LeaderboardEntry & { streak?: 'fire' | 'ice' | null })[] = (users || []).map((user) => {
+      const userPreds = predsWithDate.filter((p) => p.user_id === user.id);
       const scoredPreds = userPreds.filter((p) => p.points !== null);
       const correctPreds = scoredPreds.filter((p) => p.points === 3);
+
+      // Calcular racha (streak)
+      // Ordenamos las predicciones finalizadas por fecha descendente (más nueva primero)
+      const sortedFinishedPreds = [...scoredPreds].sort((a, b) => b.match_date - a.match_date);
+      
+      let streak: 'fire' | 'ice' | null = null;
+      if (sortedFinishedPreds.length >= 3) {
+        // Racha ganadora: las últimas 3 fueron aciertos (puntos === 3)
+        let winStreak = 0;
+        for (const p of sortedFinishedPreds) {
+          if (p.points === 3) winStreak++;
+          else break;
+        }
+
+        // Racha perdedora: las últimas 3 fueron errores (puntos === 0)
+        let loseStreak = 0;
+        for (const p of sortedFinishedPreds) {
+          if (p.points === 0) loseStreak++;
+          else break;
+        }
+
+        if (winStreak >= 3) streak = 'fire';
+        else if (loseStreak >= 3) streak = 'ice';
+      }
 
       return {
         id: user.id,
@@ -47,7 +75,8 @@ router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<vo
         total_points: scoredPreds.reduce((sum, p) => sum + (p.points || 0), 0),
         correct_predictions: correctPreds.length,
         total_predictions: userPreds.length,
-        has_paid: PAID_USERS.includes(user.username.toLowerCase()),
+        has_paid: !!user.has_paid,
+        streak,
       };
     });
 

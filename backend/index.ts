@@ -12,6 +12,7 @@ import logRoutes from './routes/logs.js';
 import { seedMatches } from './services/matchService.js';
 
 import groupRoutes from './routes/groups.js';
+import adminRoutes from './routes/admin.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -30,6 +31,7 @@ app.use('/api/predictions', predictionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ---- Health check ----
 app.get('/api/health', (_req, res) => {
