@@ -185,7 +185,7 @@ export default function DashboardPage() {
               }}
               title="Reglas de la Polla"
             >
-              <span 
+              <span
                 className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[9px] font-black italic"
                 style={{ transform: 'skewX(-6deg)', paddingRight: '0.5px' }}
               >
@@ -262,7 +262,7 @@ export default function DashboardPage() {
               <div>
                 <span className="text-xs font-bold text-[var(--color-text-primary)] block">Apuestas Pendientes</span>
                 <span className="text-[11px] text-[var(--color-text-muted)]">
-                  Ojo manito, tiene {pendingSoonCount} {pendingSoonCount === 1 ? 'partido' : 'partidos'} por apostar en las próximas 36 horas. Si no los hace ya, paila
+                  Ojo manito, tiene {pendingSoonCount} {pendingSoonCount === 1 ? 'partido' : 'partidos'} por apostar en las próximas 36 horas. Si no los hace ya, paila si sabe
                 </span>
               </div>
             </div>
