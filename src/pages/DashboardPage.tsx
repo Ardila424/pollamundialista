@@ -66,6 +66,7 @@ export default function DashboardPage() {
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [showRules, setShowRules] = useState(false);
 
   const loadAdminUsers = useCallback(async () => {
     setAdminUsersLoading(true);
@@ -164,6 +165,18 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowRules(true)}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all hover:scale-105"
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '1px solid var(--color-border)',
+                cursor: 'pointer',
+              }}
+              title="Reglas e Información"
+            >
+              ℹ️
+            </button>
             <div className="flex items-center gap-1.5">
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase"
@@ -670,6 +683,125 @@ export default function DashboardPage() {
           </div>
         )}
       </main>
+
+      {/* ═══════ MODAL: REGLAS ═══════ */}
+      {showRules && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in animate-duration-200"
+            onClick={() => setShowRules(false)}
+          />
+          {/* Modal Container */}
+          <div 
+            className="glass-strong rounded-2xl w-full max-w-lg overflow-hidden relative z-10 border border-[var(--color-border-gold)] animate-scale-in"
+            style={{
+              background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
+            }}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-[var(--color-border)] flex items-center justify-between">
+              <span className="text-base font-extrabold flex items-center gap-2" style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-display)' }}>
+                ℹ️ Reglas e Información
+              </span>
+              <button 
+                onClick={() => setShowRules(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="p-5 overflow-y-auto max-h-[60vh] space-y-4 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+              {/* Card 1: Puntos */}
+              <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">⚽ Puntuación</span>
+                <p className="mb-2">El puntaje se asigna de la siguiente manera al finalizar el partido:</p>
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-400 font-bold shrink-0">✅ +3 puntos:</span>
+                    <span>Acertar el resultado del partido (Gana Local, Empate o Gana Visitante).</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-400 font-bold shrink-0">❌ 0 puntos:</span>
+                    <span>No acertar el resultado.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Límite */}
+              <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">⏱️ Límite de Apuesta</span>
+                <p>Las apuestas se cierran automáticamente **5 minutos antes** de la hora programada del partido (kickoff). Una vez cerrado, no se pueden añadir, cambiar ni eliminar apuestas.</p>
+              </div>
+
+              {/* Card 3: Bolsa */}
+              <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">💰 Inscripción y Bolsa</span>
+                <p className="mb-2">La cuota de inscripción es de **$30.000 COP** por jugador. Todo el pozo acumulado se divide entre los 3 primeros lugares del ranking al final del torneo:</p>
+                <div className="space-y-1.5 font-semibold text-[var(--color-text-primary)] text-[11px]">
+                  <div className="flex justify-between items-center bg-[rgba(255,215,0,0.06)] p-1.5 rounded border border-[rgba(255,215,0,0.1)]">
+                    <span>🥇 Primer Lugar</span>
+                    <span style={{ color: 'var(--color-gold)' }}>70% de la bolsa</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-[rgba(255,255,255,0.02)] p-1.5 rounded border border-[var(--color-border)]">
+                    <span>🥈 Segundo Lugar</span>
+                    <span>20% de la bolsa</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-[rgba(255,255,255,0.02)] p-1.5 rounded border border-[var(--color-border)]">
+                    <span>🥉 Tercer Lugar</span>
+                    <span>10% de la bolsa</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4: Títulos */}
+              <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">🏅 Títulos Especiales</span>
+                <p className="mb-2">El ranking asigna títulos dinámicos automáticos según las estadísticas:</p>
+                <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">🧙‍♂️ El Nostradamus</span>
+                    <span className="text-[var(--color-text-muted)]">Va de primer lugar.</span>
+                  </div>
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">🥈 El Segundón</span>
+                    <span className="text-[var(--color-text-muted)]">Va en segundo lugar.</span>
+                  </div>
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">🏠 El Local</span>
+                    <span className="text-[var(--color-text-muted)]">Apuesta más a ganar local.</span>
+                  </div>
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">🤝 El Tibio</span>
+                    <span className="text-[var(--color-text-muted)]">Apuesta más a empates.</span>
+                  </div>
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">🧂 El Salado</span>
+                    <span className="text-[var(--color-text-muted)]">Cero aciertos jugados.</span>
+                  </div>
+                  <div className="p-2 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--color-border)]">
+                    <span className="font-bold block mb-0.5">💀 El Sótano</span>
+                    <span className="text-[var(--color-text-muted)]">Último lugar del ranking.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3.5 border-t border-[var(--color-border)] bg-[rgba(0,0,0,0.1)] flex justify-end">
+              <button 
+                onClick={() => setShowRules(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-102"
+                style={{ background: 'var(--color-gold-gradient)', color: '#000000', cursor: 'pointer' }}
+              >
+                ¡Listo, a jugar!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
