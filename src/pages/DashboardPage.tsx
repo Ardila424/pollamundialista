@@ -841,6 +841,25 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Card 5: Funciones Especiales */}
+              <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">⚡ Funciones Especiales</span>
+                <div className="space-y-2 text-[11px]">
+                  <div>
+                    <span className="font-bold text-[var(--color-gold)]">📊 Tendencia de apuestas:</span>{' '}
+                    <span>Muestra en tiempo real el porcentaje consolidado de votos de todo el grupo para cada opción.</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-[var(--color-gold)]">👥 Ver apuestas del grupo:</span>{' '}
+                    <span>Se habilita en cada partido **solo cuando falten menos de 5 min o empiece** para ver qué pronosticó cada amigo.</span>
+                  </div>
+                  <div>
+                    <span className="font-bold text-[var(--color-gold)]">🔥 Rachas del ranking:</span>{' '}
+                    <span>Identifica quién anda en racha de aciertos (🔥 3+ seguidos) o quién está salado (❄️ 3+ fallos seguidos).</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Footer */}
