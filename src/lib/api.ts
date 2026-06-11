@@ -147,6 +147,13 @@ class ApiClient {
       body: JSON.stringify({ username, newPin }),
     });
   }
+
+  async updateMatchResult(matchId: number, home_goals: number, away_goals: number, status: string) {
+    return this.request<{ message: string; scoring?: any }>(`/matches/${matchId}/result`, {
+      method: 'PATCH',
+      body: JSON.stringify({ home_goals, away_goals, status }),
+    });
+  }
 }
 
 export const api = new ApiClient();

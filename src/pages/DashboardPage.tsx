@@ -8,6 +8,27 @@ import KnockoutBracket from '../components/KnockoutBracket';
 import ActivityFeed from '../components/ActivityFeed';
 import type { Match, LeaderboardEntry, PredictionWithMatch, TabType } from '../types';
 
+const FLAG_MAP: Record<string, string> = {
+  'México': '🇲🇽', 'Canadá': '🇨🇦', 'Estados Unidos': '🇺🇸', 'Bolivia': '🇧🇴',
+  'Argentina': '🇦🇷', 'Perú': '🇵🇪', 'Colombia': '🇨🇴', 'Senegal': '🇸🇳',
+  'Francia': '🇫🇷', 'Australia': '🇦🇺', 'Brasil': '🇧🇷', 'Nigeria': '🇳🇬',
+  'Alemania': '🇩🇪', 'Japón': '🇯🇵', 'España': '🇪🇸', 'Corea del Sur': '🇰🇷',
+  'Inglaterra': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'Arabia Saudita': '🇸🇦', 'Portugal': '🇵🇹', 'Ghana': '🇬🇭',
+  'Países Bajos': '🇳🇱', 'Ecuador': '🇪🇨', 'Italia': '🇮🇹', 'Costa Rica': '🇨🇷',
+  'Bélgica': '🇧🇪', 'Marruecos': '🇲🇦', 'Uruguay': '🇺🇾', 'Camerún': '🇨🇲',
+  'Croacia': '🇭🇷', 'Panamá': '🇵🇦', 'Dinamarca': '🇩🇰', 'Túnez': '🇹🇳',
+  'Serbia': '🇷🇸', 'Paraguay': '🇵🇾', 'Suiza': '🇨🇭', 'Irán': '🇮🇷',
+  'Polonia': '🇵🇱', 'Chile': '🇨🇱', 'Gales': '🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'Costa de Marfil': '🇨🇮',
+  'Egipto': '🇪🇬', 'Honduras': '🇭🇳', 'Suecia': '🇸🇪', 'Rep. Checa': '🇨🇿',
+  'Ucrania': '🇺🇦', 'Jamaica': '🇯🇲', 'Qatar': '🇶🇦', 'Nueva Zelanda': '🇳🇿',
+  'Sudáfrica': '🇿🇦', 'Bosnia': '🇧🇦', 'Haití': '🇭🇹', 'Escocia': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+  'Turquía': '🇹🇷', 'Jordania': '🇯🇴', 'Austria': '🇦🇹', 'Uzbekistán': '🇺🇿',
+  'Curazao': '🇨🇼', 'Cabo Verde': '🇨🇻', 'Argelia': '🇩🇿', 'RD Congo': '🇨🇩',
+  'Irak': '🇮🇶', 'Noruega': '🇳🇴', 'Democratic Republic of the Congo': '🇨🇩'
+};
+
+const getFlag = (team: string) => FLAG_MAP[team] || '🏳️';
+
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>('partidos');
@@ -60,7 +81,9 @@ export default function DashboardPage() {
   // Admin Panel states
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminUsersLoading, setAdminUsersLoading] = useState(false);
-  const [adminSubTab, setAdminSubTab] = useState<'payments' | 'pin' | 'activity'>('payments');
+  const [adminSubTab, setAdminSubTab] = useState<'payments' | 'pin' | 'activity' | 'scores'>('payments');
+  const [adminScoreFilter, setAdminScoreFilter] = useState<'pending' | 'finished' | 'all'>('pending');
+  const [updatingMatchId, setUpdatingMatchId] = useState<number | null>(null);
   const [resetUsername, setResetUsername] = useState('');
   const [resetPin, setResetPin] = useState('');
   const [resetMessage, setResetMessage] = useState('');
@@ -110,6 +133,35 @@ export default function DashboardPage() {
       setResetError(err.message || 'Error al resetear PIN');
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const handleSubmitScore = async (e: React.FormEvent<HTMLFormElement>, matchId: number) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const homeGoalsVal = formData.get('home_goals') as string;
+    const awayGoalsVal = formData.get('away_goals') as string;
+    const statusVal = formData.get('status') as string;
+
+    const home_goals = homeGoalsVal === '' ? 0 : parseInt(homeGoalsVal, 10);
+    const away_goals = awayGoalsVal === '' ? 0 : parseInt(awayGoalsVal, 10);
+
+    if (isNaN(home_goals) || isNaN(away_goals)) {
+      alert('Los goles deben ser números válidos.');
+      return;
+    }
+
+    setUpdatingMatchId(matchId);
+    try {
+      await api.updateMatchResult(matchId, home_goals, away_goals, statusVal);
+      alert('Resultado del partido actualizado con éxito.');
+      await loadMatches();
+      await loadPredictions();
+      await loadLeaderboard();
+    } catch (err: any) {
+      alert(err.message || 'Error al actualizar el partido');
+    } finally {
+      setUpdatingMatchId(null);
     }
   };
 
@@ -570,6 +622,13 @@ export default function DashboardPage() {
                 💰 Control de Pagos
               </button>
               <button
+                onClick={() => setAdminSubTab('scores')}
+                className={`phase-chip ${adminSubTab === 'scores' ? 'active' : ''}`}
+                style={{ fontSize: '0.8125rem' }}
+              >
+                ⚽ Resultados Manuales
+              </button>
+              <button
                 onClick={() => setAdminSubTab('pin')}
                 className={`phase-chip ${adminSubTab === 'pin' ? 'active' : ''}`}
                 style={{ fontSize: '0.8125rem' }}
@@ -584,6 +643,155 @@ export default function DashboardPage() {
                 📜 Actividad
               </button>
             </div>
+
+            {/* Sub-tab: Resultados Manuales */}
+            {adminSubTab === 'scores' && (
+              <div className="glass-strong rounded-2xl p-5 border border-[var(--color-border)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                  <div>
+                    <h3 className="text-sm font-bold text-[var(--color-text-primary)]">⚽ Resultados Manuales</h3>
+                    <p className="text-[11px] text-[var(--color-text-muted)]">Actualiza los marcadores y el estado de los partidos manualmente en caso de falla de la API.</p>
+                  </div>
+                  
+                  {/* Filter pills */}
+                  <div className="flex gap-1.5 self-start">
+                    <button
+                      onClick={() => setAdminScoreFilter('pending')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+                        adminScoreFilter === 'pending'
+                          ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border-[var(--color-gold-dim)]'
+                          : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border)]'
+                      }`}
+                    >
+                      Pendientes / En Vivo
+                    </button>
+                    <button
+                      onClick={() => setAdminScoreFilter('finished')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+                        adminScoreFilter === 'finished'
+                          ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border-[var(--color-gold-dim)]'
+                          : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border)]'
+                      }`}
+                    >
+                      Finalizados
+                    </button>
+                    <button
+                      onClick={() => setAdminScoreFilter('all')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all ${
+                        adminScoreFilter === 'all'
+                          ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border-[var(--color-gold-dim)]'
+                          : 'bg-transparent text-[var(--color-text-muted)] border-[var(--color-border)]'
+                      }`}
+                    >
+                      Todos
+                    </button>
+                  </div>
+                </div>
+
+                {matches.length === 0 ? (
+                  <div className="text-center py-8 text-sm text-[var(--color-text-muted)]">
+                    No hay partidos cargados
+                  </div>
+                ) : (
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                    {matches
+                      .filter(m => {
+                        if (adminScoreFilter === 'pending') return m.status !== 'Finalizado';
+                        if (adminScoreFilter === 'finished') return m.status === 'Finalizado';
+                        return true;
+                      })
+                      .map((m) => (
+                        <form
+                          key={m.id}
+                          onSubmit={(e) => handleSubmitScore(e, m.id)}
+                          className="glass-card rounded-xl p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 transition-all"
+                          style={{ background: 'rgba(255, 255, 255, 0.01)', border: '1px solid var(--color-border)' }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-[var(--color-text-muted)] uppercase mb-1">
+                              <span>ID: {m.id}</span>
+                              <span>•</span>
+                              <span>{m.phase}</span>
+                              {m.group_name && (
+                                <>
+                                  <span>•</span>
+                                  <span>Grupo {m.group_name}</span>
+                                </>
+                              )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--color-text-primary)]">
+                              <span className="text-base shrink-0">{getFlag(m.home_team)}</span>
+                              <span className="truncate max-w-[100px] sm:max-w-none">{m.home_team}</span>
+                              <span className="text-[10px] text-[var(--color-text-muted)]">vs</span>
+                              <span className="text-base shrink-0">{getFlag(m.away_team)}</span>
+                              <span className="truncate max-w-[100px] sm:max-w-none">{m.away_team}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap shrink-0">
+                            {/* Score Inputs */}
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                name="home_goals"
+                                defaultValue={m.home_goals ?? 0}
+                                min="0"
+                                max="20"
+                                className="w-10 h-8 rounded-lg text-center font-bold text-xs"
+                                style={{
+                                  background: 'var(--color-bg-secondary)',
+                                  border: '1px solid var(--color-border)',
+                                  color: 'var(--color-text-primary)'
+                                }}
+                              />
+                              <span className="text-xs text-[var(--color-text-muted)]">-</span>
+                              <input
+                                type="number"
+                                name="away_goals"
+                                defaultValue={m.away_goals ?? 0}
+                                min="0"
+                                max="20"
+                                className="w-10 h-8 rounded-lg text-center font-bold text-xs"
+                                style={{
+                                  background: 'var(--color-bg-secondary)',
+                                  border: '1px solid var(--color-border)',
+                                  color: 'var(--color-text-primary)'
+                                }}
+                              />
+                            </div>
+
+                            {/* Status Selector */}
+                            <select
+                              name="status"
+                              defaultValue={m.status}
+                              className="h-8 rounded-lg px-2 text-xs font-semibold select-custom"
+                              style={{
+                                background: 'var(--color-bg-secondary)',
+                                border: '1px solid var(--color-border)',
+                                color: 'var(--color-text-primary)'
+                              }}
+                            >
+                              <option value="Pendiente">Pendiente</option>
+                              <option value="En_Progreso">En Progreso</option>
+                              <option value="Finalizado">Finalizado</option>
+                            </select>
+
+                            {/* Submit Button */}
+                            <button
+                              type="submit"
+                              disabled={updatingMatchId === m.id}
+                              className="h-8 px-3 rounded-lg text-[10px] font-bold transition-all shrink-0 bg-[var(--color-gold-dim)] text-[var(--color-gold)] border border-[rgba(255,215,0,0.2)] hover:scale-[1.02] cursor-pointer disabled:opacity-50"
+                            >
+                              {updatingMatchId === m.id ? '⌛ ...' : 'Guardar'}
+                            </button>
+                          </div>
+                        </form>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sub-tab: Control de Pagos */}
             {adminSubTab === 'payments' && (

@@ -9,7 +9,7 @@ const router = Router();
 
 // Estado en memoria para Lazy Syncing
 let lastSyncTime: number = 0;
-const SYNC_INTERVAL_MS = 30 * 60 * 1000; // 30 minutos
+let isSyncing: boolean = false;
 
 /**
  * GET /api/matches
@@ -19,24 +19,38 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
   try {
     const { phase, date, status } = req.query;
 
-    // Lazy Syncing: Revisar si han pasado 30 minutos desde la última sincronización
-    const now = Date.now();
-    if (now - lastSyncTime > SYNC_INTERVAL_MS) {
-      console.log('🔄 Sincronizando partidos...');
-      lastSyncTime = now;
-      try {
-        await syncMatches();
-      } catch (err) {
-        console.error('Error en Lazy Sync:', err);
-        lastSyncTime = 0;
-      }
-    }
-
     const matches = await getMatches({
       phase: phase as string | undefined,
       date: date as string | undefined,
       status: status as string | undefined,
     });
+
+    // Lazy Syncing: Revisar e iniciar sincronización en segundo plano de forma no bloqueante
+    const now = Date.now();
+    // Si hay algún partido en vivo (En_Progreso), el intervalo se reduce a 2 minutos, sino a 30 minutos
+    const hasLiveMatch = matches.some(m => m.status === 'En_Progreso');
+    const currentInterval = hasLiveMatch ? 2 * 60 * 1000 : 30 * 60 * 1000;
+
+    if (now - lastSyncTime > currentInterval && !isSyncing) {
+      console.log(`🔄 Iniciando sincronización en segundo plano (intervalo: ${currentInterval / 60000} min)...`);
+      isSyncing = true;
+      lastSyncTime = now;
+      
+      syncMatches()
+        .then((result) => {
+          if (result && result.success) {
+            console.log(`✅ Sincronización en segundo plano exitosa. Partidos actualizados: ${result.count}`);
+          } else {
+            console.warn('⚠️ Advertencia en sincronización en segundo plano:', result?.error);
+          }
+        })
+        .catch((err) => {
+          console.error('❌ Error en sincronización en segundo plano:', err);
+        })
+        .finally(() => {
+          isSyncing = false;
+        });
+    }
 
     // Cargar estadísticas de apuestas para todos los partidos en una sola consulta
     const { default: supabase } = await import('../config/supabase.js');
