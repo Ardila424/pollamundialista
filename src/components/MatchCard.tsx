@@ -42,7 +42,7 @@ const FLAG_MAP: Record<string, string> = {
   'Ukraine': '🇺🇦', 'New Zealand': '🇳🇿',
   'Peru': '🇵🇪', 'Germany': '🇩🇪', 'France': '🇫🇷',
   'Jordan': '🇯🇴', 'Uzbekistan': '🇺🇿', 'Curaçao': '🇨🇼',
-  'Cape Verde': '🇨🇻', 'Algeria': '🇩🇿', 'Democratic Republic of Congo': '🇨🇩', 'Iraq': '🇮🇶',
+  'Cape Verde': '🇨🇻', 'Algeria': '🇩🇿', 'Democratic Republic of Congo': '🇨🇩', 'Democratic Republic of the Congo': '🇨🇩', 'Iraq': '🇮🇶',
   'Norway': '🇳🇴', 'Czechia': '🇨🇿', 'Türkiye': '🇹🇷',
 };
 
