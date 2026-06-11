@@ -144,6 +144,15 @@ export default function DashboardPage() {
     ...(isAdmin ? [{ id: 'admin' as TabType, label: 'Admin', icon: '👑' }] : []),
   ];
 
+  const now = new Date();
+  const pendingSoonCount = matches.filter(m => {
+    const matchDate = new Date(m.match_date);
+    const isOpen = m.is_open && m.status === 'Pendiente';
+    const hasNoPrediction = !m.user_prediction;
+    const isSoon = matchDate.getTime() - now.getTime() < 36 * 60 * 60 * 1000;
+    return isOpen && hasNoPrediction && isSoon;
+  }).length;
+
   return (
     <div className="min-h-[100dvh] flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
       {/* ═══════ HEADER ═══════ */}
@@ -230,6 +239,40 @@ export default function DashboardPage() {
 
       {/* ═══════ CONTENT ═══════ */}
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 pt-4 pb-28 sm:pb-6">
+        {/* Global Pending Predictions Alert */}
+        {pendingSoonCount > 0 && (
+          <div 
+            className="glass-card rounded-2xl p-4 mb-5 flex items-center justify-between animate-pulse-soft"
+            style={{
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(255, 165, 0, 0.04) 100%)',
+              border: '1px solid rgba(239, 68, 68, 0.2)',
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xl">🚨</span>
+              <div>
+                <span className="text-xs font-bold text-[var(--color-text-primary)] block">Apuestas Pendientes</span>
+                <span className="text-[11px] text-[var(--color-text-muted)]">
+                  Tienes {pendingSoonCount} {pendingSoonCount === 1 ? 'partido' : 'partidos'} por apostar en las próximas 36 horas. ¡No te quedes sin puntos!
+                </span>
+              </div>
+            </div>
+            {activeTab !== 'partidos' && (
+              <button 
+                onClick={() => setActiveTab('partidos')}
+                className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-105 shrink-0"
+                style={{
+                  background: 'var(--color-red-dim)',
+                  color: 'var(--color-red)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  cursor: 'pointer'
+                }}
+              >
+                Apostar ya
+              </button>
+            )}
+          </div>
+        )}
 
         {/* ══ TAB: PARTIDOS ══ */}
         {activeTab === 'partidos' && (
