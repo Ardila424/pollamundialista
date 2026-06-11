@@ -59,35 +59,71 @@ router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<vo
 
     // Asignar títulos divertidos
     if (leaderboard.length > 0) {
-      // 1. El Nostradamus: El primer lugar (si tiene puntos)
+      // 1. 🧙‍♂️ El Nostradamus: Primer lugar (si tiene puntos)
       if (leaderboard[0].total_points > 0) {
         leaderboard[0].title = '🧙‍♂️ El Nostradamus';
       }
 
-      // Buscar al "Salado" (0 puntos, más predicciones jugadas) y "El Tibio" (más empates apostados)
+      // 2. 🥈 El Segundón: Segundo lugar (cerca pero no alcanza)
+      if (leaderboard.length > 1 && leaderboard[1].total_points > 0) {
+        if (!leaderboard[1].title) leaderboard[1].title = '🥈 El Segundón';
+      }
+
+      // 3. 💀 El Sótano: Último lugar (si tiene predicciones calificadas y puntos)
+      const lastWithPreds = [...leaderboard].reverse().find(u => u.total_predictions > 0);
+      if (lastWithPreds && lastWithPreds.id !== leaderboard[0].id && !lastWithPreds.title) {
+        lastWithPreds.title = '💀 El Sótano';
+      }
+
+      // Buscar títulos basados en comportamiento
       let maxEmpates = 0;
       let tibioId: number | null = null;
       let minAccId: number | null = null;
       let maxJugadasSinAtinar = 0;
+      let maxLocalPreds = 0;
+      let localeroId: number | null = null;
+      let maxTotalPreds = 0;
+      let compulsivoId: number | null = null;
+      let minTotalPreds = Infinity;
+      let cobardeId: number | null = null;
 
       for (const user of leaderboard) {
-        // Ignorar a Nostradamus
-        if (user.id === leaderboard[0].id && user.title) continue;
+        // Ignorar usuarios que ya tienen título
+        if (user.title) continue;
 
         const userPreds = (predictions || []).filter((p) => p.user_id === user.id);
         const scoredPreds = userPreds.filter((p) => p.points !== null);
         const empates = userPreds.filter((p) => p.prediction === 'Empate').length;
+        const locales = userPreds.filter((p) => p.prediction === 'Local').length;
 
-        // Regla para El Tibio: más empates
+        // 🤝 El Tibio: más empates apostados (mínimo 3)
         if (empates >= 3 && empates > maxEmpates) {
           maxEmpates = empates;
           tibioId = user.id;
         }
 
-        // Regla para El Salado: El que más ha jugado sin sumar 1 solo punto
+        // 🧂 El Salado: más ha jugado sin sumar ni 1 punto
         if (scoredPreds.length >= 3 && user.total_points === 0 && scoredPreds.length > maxJugadasSinAtinar) {
           maxJugadasSinAtinar = scoredPreds.length;
           minAccId = user.id;
+        }
+
+        // 🎮 El Jugador de FIFA: solo le apuesta al local (mínimo 4)
+        if (locales >= 4 && locales > maxLocalPreds) {
+          maxLocalPreds = locales;
+          localeroId = user.id;
+        }
+
+        // 🎰 El Apostador Compulsivo: más apuestas totales (mínimo 5)
+        if (userPreds.length >= 5 && userPreds.length > maxTotalPreds) {
+          maxTotalPreds = userPreds.length;
+          compulsivoId = user.id;
+        }
+
+        // 🐔 El Cobarde: menos apuestas de todos (al menos 1 para no ser vacío)
+        if (userPreds.length >= 1 && userPreds.length < minTotalPreds) {
+          minTotalPreds = userPreds.length;
+          cobardeId = user.id;
         }
       }
 
@@ -98,6 +134,18 @@ router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<vo
       if (minAccId) {
         const salado = leaderboard.find(u => u.id === minAccId);
         if (salado && !salado.title) salado.title = '🧂 El Salado';
+      }
+      if (localeroId) {
+        const localero = leaderboard.find(u => u.id === localeroId);
+        if (localero && !localero.title) localero.title = '🏠 El Local';
+      }
+      if (compulsivoId) {
+        const compulsivo = leaderboard.find(u => u.id === compulsivoId);
+        if (compulsivo && !compulsivo.title) compulsivo.title = '🎰 El Compulsivo';
+      }
+      if (cobardeId) {
+        const cobarde = leaderboard.find(u => u.id === cobardeId);
+        if (cobarde && !cobarde.title) cobarde.title = '🐔 El Cobarde';
       }
     }
 

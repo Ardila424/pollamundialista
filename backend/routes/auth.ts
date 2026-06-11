@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import supabase from '../config/supabase.js';
-import { signToken } from '../middleware/auth.js';
+import { signToken, authMiddleware } from '../middleware/auth.js';
 
 const router = Router();
+
+const ADMIN_USERS = ['tupi'];
 
 /**
  * POST /api/auth/login
@@ -83,6 +85,65 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     });
   } catch (err) {
     console.error('Error en /auth/login:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
+/**
+ * POST /api/auth/reset-pin
+ * Solo admin (tupi) puede resetear el PIN de otro usuario.
+ * Body: { username: "juancho", newPin: "1234" }
+ */
+router.post('/reset-pin', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const adminUsername = req.user!.username.toLowerCase();
+    if (!ADMIN_USERS.includes(adminUsername)) {
+      res.status(403).json({ error: 'No tienes permisos para resetear PINs' });
+      return;
+    }
+
+    const { username, newPin } = req.body;
+
+    if (!username || typeof username !== 'string') {
+      res.status(400).json({ error: 'username es requerido' });
+      return;
+    }
+
+    if (!newPin || typeof newPin !== 'string' || !/^\d{4}$/.test(newPin)) {
+      res.status(400).json({ error: 'newPin debe ser exactamente 4 dígitos' });
+      return;
+    }
+
+    const cleanUsername = username.trim().toLowerCase();
+
+    // Buscar usuario
+    const { data: targetUser } = await supabase
+      .from('users')
+      .select('id, username')
+      .eq('username', cleanUsername)
+      .single();
+
+    if (!targetUser) {
+      res.status(404).json({ error: `Usuario "${cleanUsername}" no encontrado` });
+      return;
+    }
+
+    // Hashear el nuevo PIN y actualizar
+    const newPinHash = await bcrypt.hash(newPin, 10);
+
+    const { error } = await supabase
+      .from('users')
+      .update({ pin_hash: newPinHash })
+      .eq('id', targetUser.id);
+
+    if (error) {
+      res.status(500).json({ error: 'Error al actualizar el PIN' });
+      return;
+    }
+
+    res.json({ message: `PIN de "${targetUser.username}" reseteado exitosamente` });
+  } catch (err) {
+    console.error('Error en /auth/reset-pin:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 });
