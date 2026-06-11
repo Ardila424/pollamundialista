@@ -173,24 +173,30 @@ export default function DashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             <button
               onClick={() => setShowRules(true)}
-              className="px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px] font-bold transition-all hover:scale-105"
+              className="h-7 px-3 rounded-full flex items-center justify-center gap-1.5 text-[11px] font-extrabold transition-all hover:scale-105 shrink-0"
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid var(--color-border)',
+                background: 'var(--color-gold-dim)',
+                border: '1px solid rgba(255, 215, 0, 0.25)',
+                color: 'var(--color-gold)',
                 cursor: 'pointer',
-                color: 'var(--color-text-secondary)',
               }}
               title="Reglas de la Polla"
             >
-              <span>ℹ️</span>
+              <span 
+                className="w-3.5 h-3.5 rounded-full border border-current flex items-center justify-center text-[9px] font-black italic"
+                style={{ transform: 'skewX(-6deg)', paddingRight: '0.5px' }}
+              >
+                i
+              </span>
               <span>Reglas</span>
             </button>
+
             <div className="flex items-center gap-1.5">
               <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold uppercase shrink-0"
                 style={{ background: 'var(--color-gold-dim)', color: 'var(--color-gold)' }}
               >
                 {user?.username.charAt(0)}
@@ -199,7 +205,10 @@ export default function DashboardPage() {
                 {user?.username}
               </span>
             </div>
-            <button id="logout-button" onClick={logout} className="btn btn-ghost text-xs py-1.5 px-3 rounded-lg">
+
+            <div className="w-px h-4 shrink-0" style={{ background: 'var(--color-border)' }} />
+
+            <button id="logout-button" onClick={logout} className="btn btn-ghost text-xs py-1.5 px-3 rounded-lg shrink-0">
               Salir
             </button>
           </div>
@@ -241,7 +250,7 @@ export default function DashboardPage() {
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 pt-4 pb-28 sm:pb-6">
         {/* Global Pending Predictions Alert */}
         {pendingSoonCount > 0 && (
-          <div 
+          <div
             className="glass-card rounded-2xl p-4 mb-5 flex items-center justify-between animate-pulse-soft"
             style={{
               background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(255, 165, 0, 0.04) 100%)',
@@ -253,12 +262,12 @@ export default function DashboardPage() {
               <div>
                 <span className="text-xs font-bold text-[var(--color-text-primary)] block">Apuestas Pendientes</span>
                 <span className="text-[11px] text-[var(--color-text-muted)]">
-                  Tienes {pendingSoonCount} {pendingSoonCount === 1 ? 'partido' : 'partidos'} por apostar en las próximas 36 horas. ¡No te quedes sin puntos!
+                  Ojo manito, tiene {pendingSoonCount} {pendingSoonCount === 1 ? 'partido' : 'partidos'} por apostar en las próximas 36 horas. Si no los hace ya, paila
                 </span>
               </div>
             </div>
             {activeTab !== 'partidos' && (
-              <button 
+              <button
                 onClick={() => setActiveTab('partidos')}
                 className="px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all hover:scale-105 shrink-0"
                 style={{
@@ -733,12 +742,12 @@ export default function DashboardPage() {
       {showRules && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
-          <div 
+          <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in animate-duration-200"
             onClick={() => setShowRules(false)}
           />
           {/* Modal Container */}
-          <div 
+          <div
             className="glass-strong rounded-2xl w-full max-w-lg overflow-hidden relative z-10 border border-[var(--color-border-gold)] animate-scale-in"
             style={{
               background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)',
@@ -749,7 +758,7 @@ export default function DashboardPage() {
               <span className="text-base font-extrabold flex items-center gap-2" style={{ color: 'var(--color-gold)', fontFamily: 'var(--font-display)' }}>
                 ℹ️ Reglas e Información
               </span>
-              <button 
+              <button
                 onClick={() => setShowRules(false)}
                 className="w-7 h-7 rounded-full flex items-center justify-center text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface)]"
               >
@@ -836,7 +845,7 @@ export default function DashboardPage() {
 
             {/* Footer */}
             <div className="px-5 py-3.5 border-t border-[var(--color-border)] bg-[rgba(0,0,0,0.1)] flex justify-end">
-              <button 
+              <button
                 onClick={() => setShowRules(false)}
                 className="px-4 py-2 rounded-xl text-xs font-bold transition-all hover:scale-102"
                 style={{ background: 'var(--color-gold-gradient)', color: '#000000', cursor: 'pointer' }}
