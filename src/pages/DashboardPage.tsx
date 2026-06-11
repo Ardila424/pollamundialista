@@ -167,15 +167,17 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowRules(true)}
-              className="w-7 h-7 rounded-full flex items-center justify-center text-sm transition-all hover:scale-105"
+              className="px-2.5 py-1 rounded-full flex items-center gap-1.5 text-[11px] font-bold transition-all hover:scale-105"
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 border: '1px solid var(--color-border)',
                 cursor: 'pointer',
+                color: 'var(--color-text-secondary)',
               }}
-              title="Reglas e Información"
+              title="Reglas de la Polla"
             >
-              ℹ️
+              <span>ℹ️</span>
+              <span>Reglas</span>
             </button>
             <div className="flex items-center gap-1.5">
               <div
@@ -736,22 +738,22 @@ export default function DashboardPage() {
                 <p>Las apuestas se cierran automáticamente **5 minutos antes** de la hora programada del partido (kickoff). Una vez cerrado, no se pueden añadir, cambiar ni eliminar apuestas.</p>
               </div>
 
-              {/* Card 3: Bolsa */}
+              {/* Card 3: La K */}
               <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
-                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">💰 Inscripción y Bolsa</span>
-                <p className="mb-2">La cuota de inscripción es de **$30.000 COP** por jugador. Todo el pozo acumulado se divide entre los 3 primeros lugares del ranking al final del torneo:</p>
+                <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">💰 Inscripción y La K Acumulada</span>
+                <p className="mb-2">La cuota de inscripción es de **$30.000 COP** por jugador. Toda la K acumulada se divide entre los 3 primeros lugares del ranking al final del torneo:</p>
                 <div className="space-y-1.5 font-semibold text-[var(--color-text-primary)] text-[11px]">
                   <div className="flex justify-between items-center bg-[rgba(255,215,0,0.06)] p-1.5 rounded border border-[rgba(255,215,0,0.1)]">
                     <span>🥇 Primer Lugar</span>
-                    <span style={{ color: 'var(--color-gold)' }}>70% de la bolsa</span>
+                    <span style={{ color: 'var(--color-gold)' }}>70% de la K</span>
                   </div>
                   <div className="flex justify-between items-center bg-[rgba(255,255,255,0.02)] p-1.5 rounded border border-[var(--color-border)]">
                     <span>🥈 Segundo Lugar</span>
-                    <span>20% de la bolsa</span>
+                    <span>20% de la K</span>
                   </div>
                   <div className="flex justify-between items-center bg-[rgba(255,255,255,0.02)] p-1.5 rounded border border-[var(--color-border)]">
                     <span>🥉 Tercer Lugar</span>
-                    <span>10% de la bolsa</span>
+                    <span>10% de la K</span>
                   </div>
                 </div>
               </div>
