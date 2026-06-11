@@ -114,6 +114,15 @@ class ApiClient {
   async getGroupStandings() {
     return this.request<any[]>('/groups');
   }
+
+  // ---- Logs (Admin) ----
+  async getLogs(filters?: { limit?: number; username?: string }) {
+    const params = new URLSearchParams();
+    if (filters?.limit) params.set('limit', filters.limit.toString());
+    if (filters?.username) params.set('username', filters.username);
+    const query = params.toString();
+    return this.request<any[]>(`/logs${query ? `?${query}` : ''}`);
+  }
 }
 
 export const api = new ApiClient();

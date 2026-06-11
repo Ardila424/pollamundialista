@@ -5,6 +5,7 @@ import MatchCard from '../components/MatchCard';
 import LeaderboardTable from '../components/LeaderboardTable';
 import GroupStandings from '../components/GroupStandings';
 import KnockoutBracket from '../components/KnockoutBracket';
+import ActivityFeed from '../components/ActivityFeed';
 import type { Match, LeaderboardEntry, PredictionWithMatch, TabType } from '../types';
 
 export default function DashboardPage() {
@@ -74,12 +75,16 @@ export default function DashboardPage() {
   const pendingPredictions = predictions.filter((p) => p.matches?.status !== 'Finalizado');
   const finishedPredictions = predictions.filter((p) => p.matches?.status === 'Finalizado');
 
+  // Admin check
+  const isAdmin = user?.username?.toLowerCase() === 'tupi';
+
   const tabs: { id: TabType; label: string; icon: string }[] = [
     { id: 'partidos', label: 'Partidos', icon: '⚽' },
     { id: 'pronosticos', label: 'Pronósticos', icon: '📋' },
     { id: 'grupos', label: 'Grupos', icon: '📊' },
     { id: 'eliminatorias', label: 'Llaves', icon: '🌳' },
     { id: 'ranking', label: 'Ranking', icon: '🏆' },
+    ...(isAdmin ? [{ id: 'actividad' as TabType, label: 'Actividad', icon: '📜' }] : []),
   ];
 
   return (
@@ -361,6 +366,27 @@ export default function DashboardPage() {
               </h2>
             </div>
             <KnockoutBracket matches={matches} />
+          </div>
+        )}
+
+        {/* ══ TAB: ACTIVIDAD (Admin Only) ══ */}
+        {activeTab === 'actividad' && isAdmin && (
+          <div className="animate-fade-in">
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-3" style={{ background: 'var(--color-cyan-dim)' }}>
+                <span className="text-2xl">📜</span>
+              </div>
+              <h2
+                className="text-xl font-extrabold"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-cyan)' }}
+              >
+                Registro de Actividad
+              </h2>
+              <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                Historial completo de todas las apuestas
+              </p>
+            </div>
+            <ActivityFeed />
           </div>
         )}
       </main>

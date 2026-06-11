@@ -72,4 +72,4 @@ export interface LeaderboardEntry {
 }
 
 export type PredictionChoice = 'Local' | 'Empate' | 'Visitante';
-export type TabType = 'partidos' | 'pronosticos' | 'ranking' | 'grupos' | 'eliminatorias';
+export type TabType = 'partidos' | 'pronosticos' | 'ranking' | 'grupos' | 'eliminatorias' | 'actividad';

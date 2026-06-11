@@ -8,6 +8,7 @@ import matchRoutes from './routes/matches.js';
 import predictionRoutes from './routes/predictions.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import syncRoutes from './routes/sync.js';
+import logRoutes from './routes/logs.js';
 import { seedMatches } from './services/matchService.js';
 
 import groupRoutes from './routes/groups.js';
@@ -28,6 +29,7 @@ app.use('/api/matches/sync', syncRoutes);
 app.use('/api/predictions', predictionRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/logs', logRoutes);
 
 // ---- Health check ----
 app.get('/api/health', (_req, res) => {
