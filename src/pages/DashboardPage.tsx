@@ -57,7 +57,7 @@ export default function DashboardPage() {
     try { setLeaderboard(await api.getLeaderboard()); } catch {} finally { setLbLoading(false); }
   }, []);
 
-  useEffect(() => { loadPhases(); loadMatches(); }, [loadPhases, loadMatches]);
+  useEffect(() => { loadPhases(); loadMatches(); loadLeaderboard(); }, [loadPhases, loadMatches, loadLeaderboard]);
   useEffect(() => {
     if (activeTab === 'pronosticos') loadPredictions();
     if (activeTab === 'ranking') loadLeaderboard();
@@ -163,6 +163,30 @@ export default function DashboardPage() {
         {/* ══ TAB: PARTIDOS ══ */}
         {activeTab === 'partidos' && (
           <div className="animate-fade-in">
+            {/* Prize pool banner */}
+            {leaderboard.length > 0 && (
+              <div
+                className="glass-strong rounded-2xl p-5 mb-5 text-center"
+                style={{
+                  border: '1px solid var(--color-border-gold)',
+                  background: 'linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 165, 0, 0.03) 100%)',
+                }}
+              >
+                <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                  💰 Pozo acumulado
+                </div>
+                <div
+                  className="text-3xl font-extrabold tracking-tight"
+                  style={{ fontFamily: 'var(--font-display)', color: 'var(--color-gold)' }}
+                >
+                  ${(leaderboard.length * 30000).toLocaleString('es-CO')} COP
+                </div>
+                <div className="text-xs mt-1.5" style={{ color: 'var(--color-text-muted)' }}>
+                  {leaderboard.length} {leaderboard.length === 1 ? 'jugador inscrito' : 'jugadores inscritos'} × $30.000
+                </div>
+              </div>
+            )}
+
             {/* Phase filter chips */}
             <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
               <button
