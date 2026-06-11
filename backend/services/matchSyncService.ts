@@ -1,119 +1,181 @@
 import supabase from '../config/supabase.js';
 import { scoreMatch } from './scoringService.js';
 
-const EXTERNAL_WORLD_CUP_API_URL = process.env.EXTERNAL_WORLD_CUP_API_URL || 'https://worldcup26.ir';
+const FOOTBALL_DATA_API_TOKEN = process.env.FOOTBALL_DATA_API_TOKEN;
+
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  'Mexico': 'México', 'Canada': 'Canadá', 'United States': 'Estados Unidos', 'South Africa': 'Sudáfrica',
+  'Bosnia and Herzegovina': 'Bosnia', 'Bosnia-Herzegovina': 'Bosnia', 'Haiti': 'Haití', 'Scotland': 'Escocia', 'Turkey': 'Turquía',
+  'Türkiye': 'Turquía', 'Brazil': 'Brasil', 'Morocco': 'Marruecos', 'Ivory Coast': 'Costa de Marfil',
+  'Cameroon': 'Camerún', 'Japan': 'Japón', 'Spain': 'España', 'South Korea': 'Corea del Sur',
+  'Korea Republic': 'Corea del Sur', 'Czechia': 'Rep. Checa',
+  'England': 'Inglaterra', 'Saudi Arabia': 'Arabia Saudita', 'Netherlands': 'Países Bajos',
+  'Italy': 'Italia', 'Belgium': 'Bélgica', 'Croatia': 'Croacia', 'Panama': 'Panamá',
+  'Denmark': 'Dinamarca', 'Tunisia': 'Túnez', 'Switzerland': 'Suiza', 'Iran': 'Irán',
+  'Poland': 'Polonia', 'Wales': 'Gales', 'Egypt': 'Egipto', 'Sweden': 'Suecia',
+  'Czech Republic': 'Rep. Checa', 'Ukraine': 'Ucrania', 'New Zealand': 'Nueva Zelanda',
+  'Peru': 'Perú', 'Germany': 'Alemania', 'France': 'Francia', 'Jordan': 'Jordania', 'Austria': 'Austria',
+  'Uzbekistan': 'Uzbekistán', 'Curaçao': 'Curazao', 'Cape Verde': 'Cabo Verde', 'Cape Verde Islands': 'Cabo Verde',
+  'Algeria': 'Argelia', 'Democratic Republic of Congo': 'Democratic Republic of the Congo', 'Congo DR': 'Democratic Republic of the Congo', 'Iraq': 'Irak', 'Norway': 'Noruega',
+  'Paraguay': 'Paraguay', 'Ecuador': 'Ecuador', 'Uruguay': 'Uruguay', 'Ghana': 'Ghana', 'Senegal': 'Senegal', 'Colombia': 'Colombia',
+  'Australia': 'Australia', 'Qatar': 'Qatar'
+};
+
+const STAGE_MAP: Record<string, string> = {
+  'GROUP_STAGE': 'Grupos',
+  'LAST_32': 'Treintaidosavos',
+  'LAST_16': 'Octavos',
+  'QUARTER_FINALS': 'Cuartos',
+  'SEMI_FINALS': 'Semifinal',
+  'THIRD_PLACE': 'Tercer Puesto',
+  'FINAL': 'Final'
+};
+
+function cleanName(name: string | null): string {
+  if (!name) return 'Por definir';
+  return TEAM_TRANSLATIONS[name] || name;
+}
 
 export async function syncMatches() {
-  console.log('🔄 Iniciando sincronización de partidos desde API externa...');
+  console.log('🔄 Iniciando sincronización de partidos desde football-data.org...');
+
+  if (!FOOTBALL_DATA_API_TOKEN) {
+    console.warn('⚠️ FOOTBALL_DATA_API_TOKEN no está configurado en las variables de entorno. Sincronización omitida.');
+    return { success: false, error: 'API token not configured' };
+  }
+
   try {
-    const response = await fetch(`${EXTERNAL_WORLD_CUP_API_URL}/get/games`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    let response;
+    try {
+      response = await fetch('https://api.football-data.org/v4/competitions/WC/matches', {
+        headers: {
+          'X-Auth-Token': FOOTBALL_DATA_API_TOKEN
+        },
+        signal: controller.signal
+      });
+    } catch (fetchErr: any) {
+      if (fetchErr.name === 'AbortError') {
+        throw new Error('La API de football-data.org tardó demasiado en responder (timeout de 5s)');
+      }
+      throw fetchErr;
+    } finally {
+      clearTimeout(timeout);
+    }
+
     if (!response.ok) {
       throw new Error(`Error en API externa: ${response.status} ${response.statusText}`);
     }
-    
-    const data = (await response.json()) as any;
-    const games = data?.games;
 
-    if (!Array.isArray(games)) {
-      throw new Error('La respuesta de la API no contiene el array "games"');
+    const data = (await response.json()) as any;
+    const fdMatches = data?.matches;
+
+    if (!Array.isArray(fdMatches)) {
+      throw new Error('La respuesta de la API no contiene el array "matches"');
+    }
+
+    // Obtener los partidos actuales de la base de datos
+    const { data: dbMatches, error: dbError } = await supabase.from('matches').select('*');
+    if (dbError || !dbMatches) {
+      throw new Error(`Error al obtener partidos de la BD: ${dbError?.message}`);
     }
 
     let updatedCount = 0;
-    
-    // Obtener los partidos actuales para comparar estados
-    const { data: existingMatches } = await supabase.from('matches').select('id, status');
-    const existingMap = new Map((existingMatches || []).map(m => [m.id, m.status]));
 
-    for (const game of games) {
-      const matchId = parseInt(game.id, 10);
-      if (isNaN(matchId)) continue;
+    for (const dbMatch of dbMatches) {
+      const dbDateStr = new Date(dbMatch.match_date).toISOString().substring(0, 16);
 
-      const homeGoals = game.home_score && game.home_score !== 'null' ? parseInt(game.home_score, 10) : null;
-      const awayGoals = game.away_score && game.away_score !== 'null' ? parseInt(game.away_score, 10) : null;
-      
+      // Buscar el partido correspondiente en football-data.org
+      const found = fdMatches.find((fd: any) => {
+        const fdDateStr = new Date(fd.utcDate).toISOString().substring(0, 16);
+
+        // Mapeo de fase/etapa
+        const stage = STAGE_MAP[fd.stage];
+        if (stage !== dbMatch.phase) return false;
+
+        // Fase de grupos: comparar equipos traduciendo nombres
+        if (dbMatch.phase === 'Grupos') {
+          const dbHome = dbMatch.home_team;
+          const dbAway = dbMatch.away_team;
+          const fdHome = cleanName(fd.homeTeam.name);
+          const fdAway = cleanName(fd.awayTeam.name);
+
+          const homeMatches = dbHome === fdHome || 
+            (dbHome === 'México' && fdHome === 'Mexico') || 
+            (dbHome === 'Estados Unidos' && fdHome === 'United States') || 
+            (dbHome === 'Canadá' && fdHome === 'Canada');
+            
+          const awayMatches = dbAway === fdAway || 
+            (dbAway === 'México' && fdAway === 'Mexico') || 
+            (dbAway === 'Estados Unidos' && fdAway === 'United States') || 
+            (dbAway === 'Canadá' && fdAway === 'Canada');
+
+          return homeMatches && awayMatches;
+        } else {
+          // Fase eliminatoria: comparar fecha y fase
+          return fdDateStr === dbDateStr;
+        }
+      });
+
+      if (!found) {
+        continue;
+      }
+
+      // Mapear estado
       let status = 'Pendiente';
-      if (game.finished === 'TRUE' || game.finished === true) {
+      if (found.status === 'FINISHED') {
         status = 'Finalizado';
-      } else if (game.time_elapsed && game.time_elapsed !== 'notstarted') {
+      } else if (['IN_PLAY', 'PAUSED', 'SUSPENDED'].includes(found.status)) {
         status = 'En_Progreso';
       }
 
-      // Mapeo de fase a los valores de nuestra DB
-      let phase = 'Grupos';
-      if (game.type === 'round of 32' || game.type === 'r32') phase = 'Treintaidosavos';
-      else if (game.type === 'round of 16' || game.type === 'r16') phase = 'Octavos';
-      else if (game.type === 'quarterfinal' || game.type === 'qf') phase = 'Cuartos';
-      else if (game.type === 'semifinal' || game.type === 'sf') phase = 'Semifinal';
-      else if (game.type === 'third place' || game.type === 'third') phase = 'Tercer Puesto';
-      else if (game.type === 'final') phase = 'Final';
+      // Mapear goles
+      const homeGoals = found.score?.fullTime?.home !== null && found.score?.fullTime?.home !== undefined 
+        ? found.score.fullTime.home 
+        : null;
+      const awayGoals = found.score?.fullTime?.away !== null && found.score?.fullTime?.away !== undefined 
+        ? found.score.fullTime.away 
+        : null;
 
-      let matchDate = new Date();
-      if (game.local_date) {
-        // Mapeo de stadium_id a su offset UTC en verano (junio/julio 2026)
-        // 1, 2, 3 (México: CDMX, Guadalajara, Monterrey) -> CST (UTC-6)
-        // 4, 5, 6 (Dallas, Houston, Kansas City) -> CDT (UTC-5)
-        // 7, 8, 9, 10, 11, 12 (Eastern: Atlanta, Miami, Boston, Philly, NY/NJ, Toronto) -> EDT (UTC-4)
-        // 13, 14, 15, 16 (Western: Vancouver, Seattle, SF, LA) -> PDT (UTC-7)
-        let utcOffset = '-00:00';
-        const stId = parseInt(game.stadium_id || '0', 10);
-        if ([1, 2, 3].includes(stId)) utcOffset = '-06:00';
-        else if ([4, 5, 6].includes(stId)) utcOffset = '-05:00';
-        else if ([7, 8, 9, 10, 11, 12].includes(stId)) utcOffset = '-04:00';
-        else if ([13, 14, 15, 16].includes(stId)) utcOffset = '-07:00';
+      // Mapear nombres de equipos (útil para actualizar las llaves de eliminatorias cuando se definan)
+      const homeTeam = cleanName(found.homeTeam.name) || dbMatch.home_team;
+      const awayTeam = cleanName(found.awayTeam.name) || dbMatch.away_team;
 
-        // Reemplazar espacios o slashes para estandarizar el formato ISO 8601: YYYY-MM-DDTHH:mm:00
-        const [datePart, timePart] = game.local_date.split(' ');
-        const [month, day, year] = datePart.split('/');
-        matchDate = new Date(`${year}-${month}-${day}T${timePart}:00${utcOffset}`);
-      }
+      // Verificar si hay cambios antes de hacer update para ahorrar escrituras en la base de datos
+      const goalsChanged = homeGoals !== dbMatch.home_goals || awayGoals !== dbMatch.away_goals;
+      const statusChanged = status !== dbMatch.status;
+      const teamsChanged = (homeTeam !== dbMatch.home_team && homeTeam !== 'Por definir') || 
+                           (awayTeam !== dbMatch.away_team && awayTeam !== 'Por definir');
 
-      const TEAM_TRANSLATIONS: Record<string, string> = {
-        'Mexico': 'México', 'Canada': 'Canadá', 'United States': 'Estados Unidos', 'South Africa': 'Sudáfrica',
-        'Bosnia and Herzegovina': 'Bosnia', 'Haiti': 'Haití', 'Scotland': 'Escocia', 'Turkey': 'Turquía',
-        'Türkiye': 'Turquía', 'Brazil': 'Brasil', 'Morocco': 'Marruecos', 'Ivory Coast': 'Costa de Marfil',
-        'Cameroon': 'Camerún', 'Japan': 'Japón', 'Spain': 'España', 'South Korea': 'Corea del Sur',
-        'England': 'Inglaterra', 'Saudi Arabia': 'Arabia Saudita', 'Netherlands': 'Países Bajos',
-        'Italy': 'Italia', 'Belgium': 'Bélgica', 'Croatia': 'Croacia', 'Panama': 'Panamá',
-        'Denmark': 'Dinamarca', 'Tunisia': 'Túnez', 'Switzerland': 'Suiza', 'Iran': 'Irán',
-        'Poland': 'Polonia', 'Wales': 'Gales', 'Egypt': 'Egipto', 'Sweden': 'Suecia',
-        'Czech Republic': 'Rep. Checa', 'Czechia': 'Rep. Checa', 'Ukraine': 'Ucrania', 'New Zealand': 'Nueva Zelanda',
-        'Peru': 'Perú', 'Germany': 'Alemania', 'France': 'Francia', 'Jordan': 'Jordania', 'Austria': 'Austria',
-        'Uzbekistan': 'Uzbekistán', 'Curaçao': 'Curazao', 'Cape Verde': 'Cabo Verde', 'Algeria': 'Argelia',
-        'Democratic Republic of Congo': 'RD Congo', 'Iraq': 'Irak', 'Norway': 'Noruega'
-      };
+      if (goalsChanged || statusChanged || teamsChanged) {
+        const { error: updateError } = await supabase
+          .from('matches')
+          .update({
+            home_team: homeTeam,
+            away_team: awayTeam,
+            home_goals: homeGoals,
+            away_goals: awayGoals,
+            status: status
+          })
+          .eq('id', dbMatch.id);
 
-      const rawHome = game.home_team_name_en || game.home_team_label || 'Por definir';
-      const rawAway = game.away_team_name_en || game.away_team_label || 'Por definir';
-
-      const matchData = {
-        id: matchId,
-        home_team: TEAM_TRANSLATIONS[rawHome] || rawHome,
-        away_team: TEAM_TRANSLATIONS[rawAway] || rawAway,
-        match_date: matchDate.toISOString(),
-        phase: phase,
-        group_name: game.group && game.group !== 'null' ? game.group : null,
-        home_goals: homeGoals,
-        away_goals: awayGoals,
-        status: status
-      };
-
-      const { error } = await supabase.from('matches').upsert(matchData);
-      
-      if (!error) {
-        updatedCount++;
-        
-        // Si el estado acaba de cambiar a "Finalizado", ejecutamos el scoringService
-        const oldStatus = existingMap.get(matchId);
-        if (status === 'Finalizado' && oldStatus !== 'Finalizado') {
-           console.log(`⚡ Disparando cálculo de puntos para el partido finalizado: ${matchId}`);
-           await scoreMatch(matchId);
+        if (!updateError) {
+          updatedCount++;
+          
+          // Si el estado acaba de cambiar a "Finalizado", ejecutamos el scoringService
+          if (status === 'Finalizado' && dbMatch.status !== 'Finalizado') {
+             console.log(`⚡ Disparando cálculo de puntos para el partido finalizado: ${dbMatch.id}`);
+             await scoreMatch(dbMatch.id);
+          }
+        } else {
+          console.error(`Error haciendo update del partido ${dbMatch.id}:`, updateError);
         }
-      } else {
-        console.error(`Error haciendo upsert del partido ${matchId}:`, error);
       }
     }
 
-    console.log(`✅ Sincronización completa. Partidos procesados: ${updatedCount}`);
+    console.log(`✅ Sincronización completa. Partidos actualizados: ${updatedCount}`);
     return { success: true, count: updatedCount };
   } catch (error: any) {
     console.error('❌ Error en sincronización:', error);

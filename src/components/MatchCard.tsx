@@ -176,8 +176,10 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
               <div
                 className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg"
                 style={{
-                  background: 'var(--color-bg-secondary)',
+                  background: isInProgress ? 'rgba(239, 68, 68, 0.12)' : 'var(--color-bg-secondary)',
+                  border: isInProgress ? '1px solid rgba(239, 68, 68, 0.35)' : 'none',
                   fontFamily: 'var(--font-display)',
+                  boxShadow: isInProgress ? '0 0 10px rgba(239, 68, 68, 0.25)' : 'none',
                 }}
               >
                 <span className="text-xl font-bold">{match.home_goals ?? '-'}</span>
