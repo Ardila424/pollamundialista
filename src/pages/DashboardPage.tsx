@@ -40,7 +40,7 @@ export default function DashboardPage() {
   }, [selectedPhase]);
 
   const loadPhases = useCallback(async () => {
-    try { setPhases(await api.getPhases()); } catch {}
+    try { setPhases(await api.getPhases()); } catch { }
   }, []);
 
   const loadPredictions = useCallback(async () => {
@@ -49,12 +49,12 @@ export default function DashboardPage() {
       const data = await api.getMyPredictions();
       setPredictions(data.predictions);
       setPredStats(data.stats);
-    } catch {} finally { setPredsLoading(false); }
+    } catch { } finally { setPredsLoading(false); }
   }, []);
 
   const loadLeaderboard = useCallback(async () => {
     setLbLoading(true);
-    try { setLeaderboard(await api.getLeaderboard()); } catch {} finally { setLbLoading(false); }
+    try { setLeaderboard(await api.getLeaderboard()); } catch { } finally { setLbLoading(false); }
   }, []);
 
   useEffect(() => { loadPhases(); loadMatches(); loadLeaderboard(); }, [loadPhases, loadMatches, loadLeaderboard]);
@@ -173,7 +173,7 @@ export default function DashboardPage() {
                 }}
               >
                 <div className="text-sm font-medium mb-1" style={{ color: 'var(--color-text-muted)' }}>
-                  💰 Pozo acumulado
+                  💰 La K acumulada
                 </div>
                 <div
                   className="text-3xl font-extrabold tracking-tight"
@@ -428,12 +428,12 @@ function PredictionRow({ prediction }: { prediction: PredictionWithMatch }) {
 
   const choiceLabel =
     prediction.prediction === 'Local' ? match.home_team :
-    prediction.prediction === 'Visitante' ? match.away_team :
-    'Empate';
+      prediction.prediction === 'Visitante' ? match.away_team :
+        'Empate';
 
   const choiceIcon =
     prediction.prediction === 'Local' ? '🏠' :
-    prediction.prediction === 'Visitante' ? '✈️' : '🤝';
+      prediction.prediction === 'Visitante' ? '✈️' : '🤝';
 
   const matchDate = new Date(match.match_date);
   const day = matchDate.getDate();
