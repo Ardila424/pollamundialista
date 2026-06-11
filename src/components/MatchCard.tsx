@@ -272,9 +272,8 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
         {/* Voting Trends (Tendencias) */}
         {match.prediction_trends && match.prediction_trends.total_bets > 0 && (
           <div className="mt-3.5 pt-3 border-t border-[var(--color-border)]">
-            <div className="flex items-center justify-between text-[10px] font-medium text-[var(--color-text-muted)] mb-1">
-              <span>📊 Tendencia de apuestas</span>
-              <span>{match.prediction_trends.total_bets} {match.prediction_trends.total_bets === 1 ? 'voto' : 'votos'}</span>
+            <div className="text-[10px] font-medium text-[var(--color-text-muted)] mb-1">
+              📊 Tendencia de apuestas
             </div>
             {/* Visual stacked bar */}
             <div className="flex h-2 w-full rounded-full overflow-hidden bg-[var(--color-surface)] border border-[var(--color-border)] mb-1.5">
