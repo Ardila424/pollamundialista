@@ -27,9 +27,18 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
 
     // Lazy Syncing: Revisar e iniciar sincronización en segundo plano de forma no bloqueante
     const now = Date.now();
-    // Si hay algún partido en vivo (En_Progreso), el intervalo se reduce a 2 minutos, sino a 30 minutos
-    const hasLiveMatch = matches.some(m => m.status === 'En_Progreso');
-    const currentInterval = hasLiveMatch ? 2 * 60 * 1000 : 30 * 60 * 1000;
+    // Si hay algún partido en progreso, O si hay algún partido pendiente que está por empezar (próximos 10 min) o se está jugando (últimas 2.5 horas), el intervalo se reduce a 2 minutos
+    const hasActiveMatch = matches.some(m => {
+      if (m.status === 'En_Progreso') return true;
+      if (m.status === 'Pendiente') {
+        const matchTime = new Date(m.match_date).getTime();
+        const diff = now - matchTime;
+        // Diferencia: empezó hace menos de 150 min (2.5h) o empieza en los siguientes 10 min
+        return diff > -10 * 60 * 1000 && diff < 150 * 60 * 1000;
+      }
+      return false;
+    });
+    const currentInterval = hasActiveMatch ? 2 * 60 * 1000 : 30 * 60 * 1000;
 
     if (now - lastSyncTime > currentInterval && !isSyncing) {
       console.log(`🔄 Iniciando sincronización en segundo plano (intervalo: ${currentInterval / 60000} min)...`);
