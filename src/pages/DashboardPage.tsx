@@ -49,7 +49,7 @@ export default function DashboardPage() {
   const [lbLoading, setLbLoading] = useState(false);
 
   const loadMatches = useCallback(async () => {
-    setMatchesLoading(true);
+    if (matches.length === 0) setMatchesLoading(true);
     try {
       const data = await api.getMatches(selectedPhase ? { phase: selectedPhase } : undefined);
       setMatches(data);
@@ -58,7 +58,7 @@ export default function DashboardPage() {
     } finally {
       setMatchesLoading(false);
     }
-  }, [selectedPhase]);
+  }, [selectedPhase, matches.length]);
 
   const loadPhases = useCallback(async () => {
     try { setPhases(await api.getPhases()); } catch { }
@@ -299,7 +299,7 @@ export default function DashboardPage() {
       </nav>
 
       {/* ═══════ CONTENT ═══════ */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 pt-4 pb-28 sm:pb-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 pt-4 pb-32 sm:pb-6">
         {/* Global Pending Predictions Alert */}
         {pendingSoonCount > 0 && (
           <div
@@ -944,7 +944,11 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+
+        {/* Espaciador físico para evitar que el menú móvil tape el contenido */}
+        <div style={{ height: '140px' }} className="sm:hidden" />
       </main>
+
 
       {/* ═══════ MODAL: REGLAS ═══════ */}
       {showRules && (
