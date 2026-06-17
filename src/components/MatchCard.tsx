@@ -217,7 +217,7 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
               ) : (
                 <Countdown 
                   targetDate={matchDate} 
-                  cutoffMs={5 * 60 * 1000} 
+                  cutoffMs={30 * 1000} 
                   className={!isOpen ? "text-[#EF4444]" : ""}
                 />
               )}

@@ -999,7 +999,7 @@ export default function DashboardPage() {
               {/* Card 2: Límite */}
               <div className="glass-card rounded-xl p-3.5 border border-[var(--color-border)]">
                 <span className="font-bold text-sm text-[var(--color-text-primary)] block mb-1.5">⏱️ Límite de Apuesta</span>
-                <p>Las apuestas se cierran automáticamente **5 minutos antes** de la hora programada del partido (kickoff). Una vez cerrado, no se pueden añadir, cambiar ni eliminar apuestas.</p>
+                <p>Las apuestas se cierran automáticamente **30 segundos antes** de la hora programada del partido (kickoff). Una vez cerrado, no se pueden añadir, cambiar ni eliminar apuestas.</p>
               </div>
 
               {/* Card 3: La K */}
@@ -1064,7 +1064,7 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <span className="font-bold text-[var(--color-gold)]">👥 Ver apuestas del grupo:</span>{' '}
-                    <span>Se habilita en cada partido **solo cuando falten menos de 5 min o empiece** para ver qué pronosticó cada amigo.</span>
+                    <span>Se habilita en cada partido **solo cuando falten menos de 30 segundos o empiece** para ver qué pronosticó cada amigo.</span>
                   </div>
                   <div>
                     <span className="font-bold text-[var(--color-gold)]">🔥 Rachas del ranking:</span>{' '}
