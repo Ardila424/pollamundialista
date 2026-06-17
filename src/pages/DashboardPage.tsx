@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [phases, setPhases] = useState<string[]>([]);
   const [selectedPhase, setSelectedPhase] = useState('');
+  const [filterPendingOnly, setFilterPendingOnly] = useState(false);
   const [matchesLoading, setMatchesLoading] = useState(true);
 
   // Predictions
@@ -172,8 +173,19 @@ export default function DashboardPage() {
     if (activeTab === 'admin') loadAdminUsers();
   }, [activeTab, loadPredictions, loadLeaderboard, loadAdminUsers]);
 
+  // Filter matches based on selected filters (like pending only)
+  const filteredMatches = matches.filter((match) => {
+    if (filterPendingOnly) {
+      // Un partido está pendiente de apostar si está abierto Y el usuario no tiene predicción guardada
+      const isOpen = match.is_open && match.status === 'Pendiente';
+      const hasNoPrediction = !match.user_prediction;
+      return isOpen && hasNoPrediction;
+    }
+    return true;
+  });
+
   // Group matches by date
-  const groupedMatches = matches.reduce<Record<string, Match[]>>((groups, match) => {
+  const groupedMatches = filteredMatches.reduce<Record<string, Match[]>>((groups, match) => {
     const dateObj = new Date(match.match_date);
     const dateStr = dateObj.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }); // YYYY-MM-DD
     if (!groups[dateStr]) groups[dateStr] = [];
@@ -391,17 +403,33 @@ export default function DashboardPage() {
             <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
               <button
                 id="filter-all"
-                onClick={() => setSelectedPhase('')}
-                className={`phase-chip ${selectedPhase === '' ? 'active' : ''}`}
+                onClick={() => {
+                  setSelectedPhase('');
+                  setFilterPendingOnly(false);
+                }}
+                className={`phase-chip ${selectedPhase === '' && !filterPendingOnly ? 'active' : ''}`}
               >
                 Todos
               </button>
+
+              <button
+                id="filter-pending"
+                onClick={() => setFilterPendingOnly(!filterPendingOnly)}
+                className={`phase-chip ${filterPendingOnly ? 'active' : ''}`}
+                style={{
+                  borderColor: filterPendingOnly ? 'var(--color-gold)' : undefined,
+                  color: filterPendingOnly ? 'var(--color-gold)' : undefined,
+                }}
+              >
+                ⏳ Por apostar
+              </button>
+
               {phases.map((phase) => (
                 <button
                   key={phase}
                   id={`filter-${phase}`}
                   onClick={() => setSelectedPhase(phase)}
-                  className={`phase-chip ${selectedPhase === phase ? 'active' : ''}`}
+                  className={`phase-chip ${selectedPhase === phase && !filterPendingOnly ? 'active' : ''}`}
                 >
                   {phase}
                 </button>
@@ -415,10 +443,14 @@ export default function DashboardPage() {
                   <div key={i} className="glass-card rounded-2xl animate-shimmer" style={{ height: '160px' }} />
                 ))}
               </div>
-            ) : matches.length === 0 ? (
+            ) : filteredMatches.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-5xl mb-4">📅</div>
-                <p className="font-medium" style={{ color: 'var(--color-text-muted)' }}>No hay partidos para este filtro</p>
+                <div className="text-5xl mb-4">{filterPendingOnly ? '🎉' : '📅'}</div>
+                <p className="font-medium animate-fade-in" style={{ color: 'var(--color-text-secondary)' }}>
+                  {filterPendingOnly 
+                    ? '¡Al día, manito! No tienes partidos pendientes por apostar' 
+                    : 'No hay partidos para este filtro'}
+                </p>
               </div>
             ) : (
               <div className="space-y-8">
