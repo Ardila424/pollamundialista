@@ -35,8 +35,6 @@ export default function DashboardPage() {
 
   // Matches
   const [matches, setMatches] = useState<Match[]>([]);
-  const [phases, setPhases] = useState<string[]>([]);
-  const [selectedPhase, setSelectedPhase] = useState('');
   const [filterPendingOnly, setFilterPendingOnly] = useState(false);
   const [matchesLoading, setMatchesLoading] = useState(true);
 
@@ -52,18 +50,14 @@ export default function DashboardPage() {
   const loadMatches = useCallback(async () => {
     if (matches.length === 0) setMatchesLoading(true);
     try {
-      const data = await api.getMatches(selectedPhase ? { phase: selectedPhase } : undefined);
+      const data = await api.getMatches(undefined);
       setMatches(data);
     } catch (err) {
       console.error('Error cargando partidos:', err);
     } finally {
       setMatchesLoading(false);
     }
-  }, [selectedPhase, matches.length]);
-
-  const loadPhases = useCallback(async () => {
-    try { setPhases(await api.getPhases()); } catch { }
-  }, []);
+  }, [matches.length]);
 
   const loadPredictions = useCallback(async () => {
     setPredsLoading(true);
@@ -166,7 +160,7 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => { loadPhases(); loadMatches(); loadLeaderboard(); }, [loadPhases, loadMatches, loadLeaderboard]);
+  useEffect(() => { loadMatches(); loadLeaderboard(); }, [loadMatches, loadLeaderboard]);
   useEffect(() => {
     if (activeTab === 'pronosticos') loadPredictions();
     if (activeTab === 'ranking') loadLeaderboard();
@@ -399,22 +393,19 @@ export default function DashboardPage() {
               </div>
             )}
 
-            {/* Phase filter chips */}
-            <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide">
+            {/* Filter chips */}
+            <div className="flex gap-2 pb-4">
               <button
                 id="filter-all"
-                onClick={() => {
-                  setSelectedPhase('');
-                  setFilterPendingOnly(false);
-                }}
-                className={`phase-chip ${selectedPhase === '' && !filterPendingOnly ? 'active' : ''}`}
+                onClick={() => setFilterPendingOnly(false)}
+                className={`phase-chip ${!filterPendingOnly ? 'active' : ''}`}
               >
-                Todos
+                Todos los partidos
               </button>
 
               <button
                 id="filter-pending"
-                onClick={() => setFilterPendingOnly(!filterPendingOnly)}
+                onClick={() => setFilterPendingOnly(true)}
                 className={`phase-chip ${filterPendingOnly ? 'active' : ''}`}
                 style={{
                   borderColor: filterPendingOnly ? 'var(--color-gold)' : undefined,
@@ -423,17 +414,6 @@ export default function DashboardPage() {
               >
                 ⏳ Por apostar
               </button>
-
-              {phases.map((phase) => (
-                <button
-                  key={phase}
-                  id={`filter-${phase}`}
-                  onClick={() => setSelectedPhase(phase)}
-                  className={`phase-chip ${selectedPhase === phase && !filterPendingOnly ? 'active' : ''}`}
-                >
-                  {phase}
-                </button>
-              ))}
             </div>
 
             {/* Matches */}
