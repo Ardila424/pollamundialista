@@ -167,13 +167,11 @@ export default function DashboardPage() {
     if (activeTab === 'admin') loadAdminUsers();
   }, [activeTab, loadPredictions, loadLeaderboard, loadAdminUsers]);
 
-  // Filter matches based on selected filters (like pending only)
+  // Filter matches based on selected filters (like pending to play only)
   const filteredMatches = matches.filter((match) => {
     if (filterPendingOnly) {
-      // Un partido está pendiente de apostar si está abierto Y el usuario no tiene predicción guardada
-      const isOpen = match.is_open && match.status === 'Pendiente';
-      const hasNoPrediction = !match.user_prediction;
-      return isOpen && hasNoPrediction;
+      // Un partido falta por jugarse si su estado es 'Pendiente'
+      return match.status === 'Pendiente';
     }
     return true;
   });
@@ -412,7 +410,7 @@ export default function DashboardPage() {
                   color: filterPendingOnly ? 'var(--color-gold)' : undefined,
                 }}
               >
-                ⏳ Por apostar
+                ⏳ Por jugar
               </button>
             </div>
 
@@ -425,10 +423,10 @@ export default function DashboardPage() {
               </div>
             ) : filteredMatches.length === 0 ? (
               <div className="text-center py-16">
-                <div className="text-5xl mb-4">{filterPendingOnly ? '🎉' : '📅'}</div>
+                <div className="text-5xl mb-4">{filterPendingOnly ? '⚽' : '📅'}</div>
                 <p className="font-medium animate-fade-in" style={{ color: 'var(--color-text-secondary)' }}>
                   {filterPendingOnly 
-                    ? '¡Al día, manito! No tienes partidos pendientes por apostar' 
+                    ? 'No hay partidos pendientes por jugarse' 
                     : 'No hay partidos para este filtro'}
                 </p>
               </div>
