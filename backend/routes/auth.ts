@@ -58,7 +58,12 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Usuario no existe → crear automáticamente
+    // Usuario no existe → crear automáticamente (si el registro no está cerrado)
+    if (process.env.REGISTRATION_CLOSED === 'true') {
+      res.status(403).json({ error: 'El registro de nuevos jugadores está cerrado' });
+      return;
+    }
+
     const pinHash = await bcrypt.hash(pin, 10);
 
     const { data: newUser, error } = await supabase
