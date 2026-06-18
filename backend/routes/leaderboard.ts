@@ -21,14 +21,32 @@ router.get('/', authMiddleware, async (_req: Request, res: Response): Promise<vo
       return;
     }
 
-    // Obtener todas las predicciones con puntos, pronóstico y fecha del partido
-    const { data: predictions, error: predError } = await supabase
-      .from('predictions')
-      .select('user_id, points, prediction, matches ( match_date )');
+    // Obtener todas las predicciones con puntos, pronóstico y fecha del partido paginando de 1000 en 1000
+    let predictions: any[] = [];
+    let from = 0;
+    const limit = 1000;
+    let hasMore = true;
 
-    if (predError) {
-      res.status(500).json({ error: 'Error al obtener predicciones' });
-      return;
+    while (hasMore) {
+      const { data, error: predError } = await supabase
+        .from('predictions')
+        .select('user_id, points, prediction, matches ( match_date )')
+        .range(from, from + limit - 1);
+
+      if (predError) {
+        res.status(500).json({ error: 'Error al obtener predicciones' });
+        return;
+      }
+
+      if (data && data.length > 0) {
+        predictions = predictions.concat(data);
+        from += limit;
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
     }
 
     // Mapear predicciones con fecha de partido
