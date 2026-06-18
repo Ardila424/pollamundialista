@@ -123,4 +123,100 @@ router.post('/reset-pin', authMiddleware, adminOnly, async (req: Request, res: R
   }
 });
 
+/**
+ * GET /api/admin/match-audit/:matchId
+ * Obtiene la auditoría de puntos para un partido específico. Solo admin.
+ */
+router.get('/match-audit/:matchId', authMiddleware, adminOnly, async (req: Request, res: Response): Promise<void> => {
+  try {
+    const matchId = parseInt(req.params.matchId, 10);
+    if (isNaN(matchId)) {
+      res.status(400).json({ error: 'ID de partido inválido' });
+      return;
+    }
+
+    // 1. Obtener todos los usuarios
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, username')
+      .order('username', { ascending: true });
+
+    if (usersError) {
+      res.status(500).json({ error: `Error al obtener usuarios: ${usersError.message}` });
+      return;
+    }
+
+    // 2. Obtener todos los partidos ordenados por fecha y por ID
+    const { data: allMatches, error: matchesError } = await supabase
+      .from('matches')
+      .select('id, home_team, away_team, home_goals, away_goals, status, match_date')
+      .order('match_date', { ascending: true })
+      .order('id', { ascending: true });
+
+    if (matchesError) {
+      res.status(500).json({ error: `Error al obtener partidos: ${matchesError.message}` });
+      return;
+    }
+
+    // Buscar el partido objetivo
+    const targetMatch = allMatches.find(m => m.id === matchId);
+    if (!targetMatch) {
+      res.status(404).json({ error: 'Partido no encontrado' });
+      return;
+    }
+
+    // Determinar la lista de partidos que jugaron antes cronológicamente
+    const targetIndex = allMatches.findIndex(m => m.id === matchId);
+    const priorMatchIds = allMatches.slice(0, targetIndex).map(m => m.id);
+
+    // 3. Obtener todas las predicciones de los partidos prioritarios y del partido objetivo
+    const allRelevantMatchIds = [...priorMatchIds, matchId];
+    
+    const { data: predictions, error: predError } = await supabase
+      .from('predictions')
+      .select('user_id, match_id, prediction, points')
+      .in('match_id', allRelevantMatchIds);
+
+    if (predError) {
+      res.status(500).json({ error: `Error al obtener predicciones: ${predError.message}` });
+      return;
+    }
+
+    // 4. Calcular para cada usuario
+    const auditUsers = users.map((user: any) => {
+      // Predicciones de este usuario
+      const userPreds = (predictions || []).filter((p: any) => p.user_id === user.id);
+      
+      // Predicción del partido actual
+      const targetPred = userPreds.find((p: any) => p.match_id === matchId);
+      
+      // Calcular puntos acumulados antes
+      const pointsBefore = userPreds
+        .filter((p: any) => p.match_id !== matchId && p.points !== null)
+        .reduce((sum: number, p: any) => sum + (p.points || 0), 0);
+      
+      const earnedPoints = targetPred && targetPred.points !== null ? targetPred.points : null;
+      const pointsAfter = pointsBefore + (earnedPoints ?? 0);
+
+      return {
+        userId: user.id,
+        username: user.username,
+        prediction: targetPred ? targetPred.prediction : null,
+        earnedPoints,
+        pointsBefore,
+        pointsAfter,
+      };
+    });
+
+    res.json({
+      match: targetMatch,
+      users: auditUsers,
+    });
+  } catch (err) {
+    console.error('Error en GET /admin/match-audit/:matchId:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+});
+
 export default router;
+

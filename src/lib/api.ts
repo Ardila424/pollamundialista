@@ -148,6 +148,10 @@ class ApiClient {
     });
   }
 
+  async getMatchAudit(matchId: number) {
+    return this.request<{ match: any; users: any[] }>(`/admin/match-audit/${matchId}`);
+  }
+
   async updateMatchResult(matchId: number, home_goals: number, away_goals: number, status: string) {
     return this.request<{ message: string; scoring?: any }>(`/matches/${matchId}/result`, {
       method: 'PATCH',

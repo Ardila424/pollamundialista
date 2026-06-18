@@ -76,7 +76,7 @@ export default function DashboardPage() {
   // Admin Panel states
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminUsersLoading, setAdminUsersLoading] = useState(false);
-  const [adminSubTab, setAdminSubTab] = useState<'payments' | 'pin' | 'activity' | 'scores'>('payments');
+  const [adminSubTab, setAdminSubTab] = useState<'payments' | 'pin' | 'activity' | 'scores' | 'audit'>('payments');
   const [adminScoreFilter, setAdminScoreFilter] = useState<'pending' | 'finished' | 'all'>('pending');
   const [updatingMatchId, setUpdatingMatchId] = useState<number | null>(null);
   const [resetUsername, setResetUsername] = useState('');
@@ -85,6 +85,10 @@ export default function DashboardPage() {
   const [resetError, setResetError] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [selectedAuditMatchId, setSelectedAuditMatchId] = useState<number | ''>('');
+  const [auditData, setAuditData] = useState<any | null>(null);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditError, setAuditError] = useState('');
 
   const loadAdminUsers = useCallback(async () => {
     setAdminUsersLoading(true);
@@ -159,6 +163,20 @@ export default function DashboardPage() {
       setUpdatingMatchId(null);
     }
   };
+
+  const fetchMatchAudit = useCallback(async (matchId: number) => {
+    setAuditLoading(true);
+    setAuditError('');
+    try {
+      const data = await api.getMatchAudit(matchId);
+      setAuditData(data);
+    } catch (err: any) {
+      setAuditError(err.message || 'Error al obtener la auditoría del partido');
+      setAuditData(null);
+    } finally {
+      setAuditLoading(false);
+    }
+  }, []);
 
   useEffect(() => { loadMatches(); loadLeaderboard(); }, [loadMatches, loadLeaderboard]);
   useEffect(() => {
@@ -652,6 +670,13 @@ export default function DashboardPage() {
               >
                 📜 Actividad
               </button>
+              <button
+                onClick={() => setAdminSubTab('audit')}
+                className={`phase-chip ${adminSubTab === 'audit' ? 'active' : ''}`}
+                style={{ fontSize: '0.8125rem' }}
+              >
+                🔍 Auditoría de Puntos
+              </button>
             </div>
 
             {/* Sub-tab: Resultados Manuales */}
@@ -950,6 +975,148 @@ export default function DashboardPage() {
                   <p className="text-[11px] text-[var(--color-text-muted)]">Auditoría completa de movimientos de apuestas del grupo.</p>
                 </div>
                 <ActivityFeed />
+              </div>
+            )}
+
+            {/* Sub-tab: Auditoría de Puntos */}
+            {adminSubTab === 'audit' && (
+              <div className="glass-strong rounded-2xl p-5 border border-[var(--color-border)]">
+                <div className="mb-4">
+                  <h3 className="text-sm font-bold text-[var(--color-text-primary)]">🔍 Auditoría de Puntos por Partido</h3>
+                  <p className="text-[11px] text-[var(--color-text-muted)]">
+                    Verifica la evolución de puntos acumulados para todos los jugadores en un partido finalizado.
+                  </p>
+                </div>
+
+                {/* Dropdown de partidos finalizados */}
+                <div className="mb-5">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold mb-1.5 text-[var(--color-text-muted)]">
+                    Seleccionar Partido Finalizado
+                  </label>
+                  <select
+                    className="w-full bg-[var(--color-bg-dark)] border border-[var(--color-border)] rounded-xl px-3 py-2 text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-gold)] transition-colors"
+                    value={selectedAuditMatchId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedAuditMatchId(val === '' ? '' : parseInt(val, 10));
+                      if (val !== '') {
+                        fetchMatchAudit(parseInt(val, 10));
+                      } else {
+                        setAuditData(null);
+                      }
+                    }}
+                  >
+                    <option value="">-- Selecciona un partido --</option>
+                    {matches
+                      .filter((m) => m.status === 'Finalizado')
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          ⚽ {m.home_team} vs {m.away_team} ({m.home_goals ?? 0} - {m.away_goals ?? 0})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                {auditLoading && (
+                  <div className="flex justify-center items-center py-8">
+                    <span className="animate-spin rounded-full h-6 w-6 border-b-2 border-[var(--color-gold)]"></span>
+                  </div>
+                )}
+
+                {auditError && (
+                  <div className="p-3 bg-[var(--color-red-dim)] border border-[var(--color-red)]/50 rounded-xl text-[var(--color-red)] text-xs mb-4 text-center">
+                    ❌ {auditError}
+                  </div>
+                )}
+
+                {!auditLoading && !auditError && selectedAuditMatchId && !auditData && (
+                  <p className="text-xs text-[var(--color-text-muted)] text-center py-4">
+                    No se pudieron cargar datos para este partido.
+                  </p>
+                )}
+
+                {auditData && (
+                  <div className="space-y-4">
+                    {/* Tarjeta resumen del partido */}
+                    <div className="p-4 bg-[var(--color-bg-dark)]/80 border border-[var(--color-border)] rounded-xl flex items-center justify-between">
+                      <div>
+                        <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Partido Auditado</div>
+                        <div className="text-sm font-extrabold text-[var(--color-text-primary)]">
+                          {auditData.match.home_team} {auditData.match.home_goals} - {auditData.match.away_goals} {auditData.match.away_team}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Resultado Real</div>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold ${
+                          auditData.match.home_goals > auditData.match.away_goals 
+                            ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border border-[var(--color-gold-dim)]'
+                            : auditData.match.home_goals === auditData.match.away_goals
+                            ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        }`}>
+                          {auditData.match.home_goals > auditData.match.away_goals 
+                            ? 'Local' 
+                            : auditData.match.home_goals === auditData.match.away_goals 
+                            ? 'Empate' 
+                            : 'Visitante'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Tabla de auditoría */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-[var(--color-border)] text-[9px] uppercase tracking-wider text-[var(--color-text-muted)] font-bold">
+                            <th className="py-2.5 font-bold">Usuario</th>
+                            <th className="py-2.5 font-bold text-center">Apuesta</th>
+                            <th className="py-2.5 font-bold text-center">Puntos Partido</th>
+                            <th className="py-2.5 font-bold text-center">Puntos Antes</th>
+                            <th className="py-2.5 font-bold text-center">Puntos Después</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {auditData.users.map((u: any) => {
+                            const isCorrect = u.earnedPoints === 3;
+                            return (
+                              <tr key={u.userId} className="border-b border-[var(--color-border)]/30 hover:bg-white/5 transition-colors">
+                                <td className="py-3 font-bold text-[var(--color-text-primary)]">
+                                  {u.username}
+                                </td>
+                                <td className="py-3 text-center">
+                                  {u.prediction ? (
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] bg-slate-800 text-slate-200 border border-slate-700">
+                                      {u.prediction === 'Local' ? '🏠 Local' : u.prediction === 'Empate' ? '🤝 Empate' : '✈️ Visitante'}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[var(--color-text-muted)] text-[10px] italic">No apostó</span>
+                                  )}
+                                </td>
+                                <td className="py-3 text-center font-extrabold">
+                                  {u.earnedPoints !== null ? (
+                                    isCorrect ? (
+                                      <span className="text-[var(--color-green)] font-extrabold">+3 pts</span>
+                                    ) : (
+                                      <span className="text-[var(--color-red)]">0 pts</span>
+                                    )
+                                  ) : (
+                                    <span className="text-amber-400 italic">No calculado</span>
+                                  )}
+                                </td>
+                                <td className="py-3 text-center text-[var(--color-text-muted)] font-medium">
+                                  {u.pointsBefore} pts
+                                </td>
+                                <td className="py-3 text-center font-extrabold text-[var(--color-gold)]">
+                                  {u.pointsAfter} pts
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
