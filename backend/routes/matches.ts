@@ -19,13 +19,13 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
   try {
     const { phase, date, status } = req.query;
 
-    const matches = await getMatches({
+    let matches = await getMatches({
       phase: phase as string | undefined,
       date: date as string | undefined,
       status: status as string | undefined,
     });
 
-    // Lazy Syncing: Revisar e iniciar sincronización en segundo plano de forma no bloqueante
+    // Lazy Syncing: Revisar e iniciar sincronización de forma bloqueante para entregar datos frescos al instante
     const now = Date.now();
     // Si hay algún partido en progreso, O si hay algún partido pendiente que está por empezar (próximos 10 min) o se está jugando (últimas 2.5 horas), el intervalo se reduce a 2 minutos
     const hasActiveMatch = matches.some(m => {
@@ -41,24 +41,29 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
     const currentInterval = hasActiveMatch ? 2 * 60 * 1000 : 30 * 60 * 1000;
 
     if (now - lastSyncTime > currentInterval && !isSyncing) {
-      console.log(`🔄 Iniciando sincronización en segundo plano (intervalo: ${currentInterval / 60000} min)...`);
+      console.log(`🔄 Iniciando sincronización de partidos (intervalo: ${currentInterval / 60000} min)...`);
       isSyncing = true;
       lastSyncTime = now;
       
-      syncMatches()
-        .then((result) => {
-          if (result && result.success) {
-            console.log(`✅ Sincronización en segundo plano exitosa. Partidos actualizados: ${result.count}`);
-          } else {
-            console.warn('⚠️ Advertencia en sincronización en segundo plano:', result?.error);
-          }
-        })
-        .catch((err) => {
-          console.error('❌ Error en sincronización en segundo plano:', err);
-        })
-        .finally(() => {
-          isSyncing = false;
-        });
+      try {
+        const result = await syncMatches();
+        if (result && result.success) {
+          console.log(`✅ Sincronización exitosa. Partidos actualizados: ${result.count}`);
+        } else {
+          console.warn('⚠️ Advertencia en sincronización:', result?.error);
+        }
+      } catch (err) {
+        console.error('❌ Error en sincronización:', err);
+      } finally {
+        isSyncing = false;
+      }
+
+      // Recargar partidos de la BD tras la sincronización para que el usuario reciba la info actualizada de inmediato
+      matches = await getMatches({
+        phase: phase as string | undefined,
+        date: date as string | undefined,
+        status: status as string | undefined,
+      });
     }
 
     // Cargar estadísticas de apuestas para todos los partidos en una sola consulta
