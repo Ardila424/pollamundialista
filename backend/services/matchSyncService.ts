@@ -244,8 +244,8 @@ export async function syncMatches() {
         if (!updateError) {
           updatedCount++;
           
-          // Si el estado acaba de cambiar a "Finalizado", ejecutamos el scoringService
-          if (status === 'Finalizado' && dbMatch.status !== 'Finalizado') {
+          // Si el estado acaba de cambiar a "Finalizado" o los goles del partido finalizado cambiaron, ejecutamos/recalculamos el scoringService
+          if (status === 'Finalizado' && (dbMatch.status !== 'Finalizado' || goalsChanged)) {
              console.log(`⚡ Disparando cálculo de puntos para el partido finalizado: ${dbMatch.id}`);
              await scoreMatch(dbMatch.id);
           }
