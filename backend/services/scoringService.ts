@@ -54,20 +54,22 @@ export async function scoreMatch(matchId: number): Promise<{
     return { success: true, scored: 0 };
   }
 
-  // 4. Calcular y actualizar puntos para cada pronóstico
-  let scored = 0;
-  for (const pred of predictions) {
+  // 4. Calcular y actualizar puntos para cada pronóstico en paralelo
+  const updatePromises = predictions.map(async (pred) => {
     const points = pred.prediction === realResult ? 3 : 0;
-
     const { error } = await supabase
       .from('predictions')
       .update({ points })
       .eq('id', pred.id);
-
-    if (!error) {
-      scored++;
+    if (error) {
+      console.error(`Error al actualizar puntos de predicción ${pred.id}:`, error.message);
+      return false;
     }
-  }
+    return true;
+  });
+
+  const results = await Promise.all(updatePromises);
+  const scored = results.filter(r => r === true).length;
 
   console.log(
     `⚽ Partido ${matchId}: ${match.home_team} ${match.home_goals}-${match.away_goals} ${match.away_team} → Resultado: ${realResult}, ${scored} pronósticos puntuados`
