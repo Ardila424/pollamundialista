@@ -82,7 +82,11 @@ export async function syncMatches() {
       
       const diffTime = Math.abs(matchDate.getTime() - now.getTime());
       const diffDays = diffTime / (1000 * 60 * 60 * 24);
-      if (match.status === 'Pendiente' && diffDays <= 1.5) {
+      const isPending = match.status === 'Pendiente';
+      const hasPlaceholder = isPlaceholder(match.home_team) || isPlaceholder(match.away_team);
+      const threshold = hasPlaceholder ? 5.0 : 1.5;
+
+      if (isPending && diffDays <= threshold) {
         datesToSync.add(formatDate(matchDate));
         const prevDate = new Date(matchDate);
         prevDate.setUTCDate(prevDate.getUTCDate() - 1);
