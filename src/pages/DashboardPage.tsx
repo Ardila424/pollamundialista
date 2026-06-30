@@ -1036,7 +1036,17 @@ export default function DashboardPage() {
                 )}
 
                 {auditData && (
-                       <div className="text-right">
+                  <div className="space-y-4">
+                    {/* Tarjeta resumen del partido */}
+                    <div className="p-4 bg-[var(--color-bg-dark)]/80 border border-[var(--color-border)] rounded-xl flex items-center justify-between">
+                      <div>
+                        <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Partido Auditado</div>
+                        <div className="text-sm font-extrabold text-[var(--color-text-primary)]">
+                          {auditData.match.home_team} {auditData.match.home_goals} - {auditData.match.away_goals} {auditData.match.away_team}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
                         <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Resultado Real</div>
                         {auditData.match.phase === 'Grupos' ? (
                           <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold ${
