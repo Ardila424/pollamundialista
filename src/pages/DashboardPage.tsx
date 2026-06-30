@@ -1127,6 +1127,7 @@ export default function DashboardPage() {
                                   ) : (
                                     <span className="text-amber-400 italic">No calculado</span>
                                   )}
+                                </td>
                                 <td className="py-3 text-center text-[var(--color-text-muted)] font-medium">
                                   {u.pointsBefore} pts
                                 </td>
