@@ -31,13 +31,20 @@ export async function scoreMatch(matchId: number): Promise<{
   }
 
   // 2. Determinar resultado real
-  let realResult: 'Local' | 'Empate' | 'Visitante';
-  if (match.home_goals > match.away_goals) {
-    realResult = 'Local';
-  } else if (match.home_goals === match.away_goals) {
-    realResult = 'Empate';
+  let realResult = '';
+  if (match.phase === 'Grupos') {
+    if (match.home_goals > match.away_goals) {
+      realResult = 'Local';
+    } else if (match.home_goals === match.away_goals) {
+      realResult = 'Empate';
+    } else {
+      realResult = 'Visitante';
+    }
   } else {
-    realResult = 'Visitante';
+    // Fase eliminatoria
+    const winner = match.winner || (match.home_goals > match.away_goals ? 'Local' : 'Visitante');
+    const method = match.win_method || '120';
+    realResult = `${winner}_${method}`;
   }
 
   // 3. Obtener todos los pronósticos de este partido
@@ -56,11 +63,42 @@ export async function scoreMatch(matchId: number): Promise<{
 
   // 4. Calcular y actualizar puntos para cada pronóstico en paralelo
   const updatePromises = predictions.map(async (pred) => {
-    const points = pred.prediction === realResult ? 3 : 0;
+    let points = 0;
+    
+    if (match.phase === 'Grupos') {
+      points = pred.prediction === realResult ? 3 : 0;
+    } else {
+      // Fase eliminatoria
+      if (pred.prediction && !pred.prediction.includes('_')) {
+        // Regla antigua (compatibilidad con apuestas pasadas o no actualizadas)
+        let oldRealResult: 'Local' | 'Empate' | 'Visitante';
+        if (match.home_goals > match.away_goals) {
+          oldRealResult = 'Local';
+        } else if (match.home_goals === match.away_goals) {
+          oldRealResult = 'Empate';
+        } else {
+          oldRealResult = 'Visitante';
+        }
+        points = pred.prediction === oldRealResult ? 3 : 0;
+      } else {
+        // Regla nueva (Ganador + Forma de victoria)
+        const [predWinner, predMethod] = (pred.prediction || '').split('_');
+        const [realWinner, realMethod] = realResult.split('_');
+
+        if (predWinner && realWinner && predWinner === realWinner) {
+          points += 2; // Acertó ganador
+          if (predMethod && realMethod && predMethod === realMethod) {
+            points += 1; // Acertó método (forma de ganar)
+          }
+        }
+      }
+    }
+
     const { error } = await supabase
       .from('predictions')
       .update({ points })
       .eq('id', pred.id);
+      
     if (error) {
       console.error(`Error al actualizar puntos de predicción ${pred.id}:`, error.message);
       return false;

@@ -77,6 +77,7 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
   const isFinished = match.status === 'Finalizado';
   const isInProgress = match.status === 'En_Progreso';
   const isOpen = match.is_open && match.status === 'Pendiente';
+  const isGroupStage = match.phase === 'Grupos';
 
   const matchDate = new Date(match.match_date);
   const formattedTime = matchDate.toLocaleTimeString('es-CO', {
@@ -84,6 +85,26 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
     minute: '2-digit',
     timeZone: 'America/Bogota'
   }) + ' COT';
+
+  // Parsear la predicción actual en fase eliminatoria
+  let currentWinner: 'Local' | 'Visitante' | null = null;
+  let currentMethod: '120' | 'Penales' | null = null;
+
+  if (selectedPrediction) {
+    if (selectedPrediction.includes('_')) {
+      const parts = selectedPrediction.split('_');
+      currentWinner = parts[0] as 'Local' | 'Visitante';
+      currentMethod = parts[1] as '120' | 'Penales';
+    } else {
+      if (selectedPrediction === 'Local') {
+        currentWinner = 'Local';
+        currentMethod = '120';
+      } else if (selectedPrediction === 'Visitante') {
+        currentWinner = 'Visitante';
+        currentMethod = '120';
+      }
+    }
+  }
 
   const handlePredict = async (choice: PredictionChoice) => {
     if (!isOpen || isSaving) return;
@@ -106,10 +127,80 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
     }
   };
 
+  const handlePredictKnockout = async (winner: 'Local' | 'Visitante') => {
+    if (!isOpen || isSaving) return;
+
+    if (currentWinner === winner) {
+      // Toggle off / deseleccionar
+      setSelectedPrediction(null);
+      setIsSaving(true);
+      try {
+        await api.deletePrediction(match.id);
+        onPredictionSaved();
+      } catch (err) {
+        setSelectedPrediction((match.user_prediction as PredictionChoice) || null);
+      } finally {
+        setIsSaving(false);
+      }
+    } else {
+      // Seleccionar ganador, por defecto método '120'
+      const method = currentMethod || '120';
+      const choice = `${winner}_${method}` as PredictionChoice;
+      setSelectedPrediction(choice);
+      setIsSaving(true);
+      try {
+        await api.savePrediction(match.id, choice);
+        onPredictionSaved();
+      } catch (err) {
+        setSelectedPrediction((match.user_prediction as PredictionChoice) || null);
+      } finally {
+        setIsSaving(false);
+      }
+    }
+  };
+
+  const handleMethodPredict = async (method: '120' | 'Penales') => {
+    if (!isOpen || isSaving || !currentWinner) return;
+
+    const choice = `${currentWinner}_${method}` as PredictionChoice;
+    setSelectedPrediction(choice);
+    setIsSaving(true);
+    try {
+      await api.savePrediction(match.id, choice);
+      onPredictionSaved();
+    } catch (err) {
+      setSelectedPrediction((match.user_prediction as PredictionChoice) || null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const getPredBtnClass = (choice: PredictionChoice) => {
     const isSelected = selectedPrediction === choice;
     const isCorrect = isFinished && match.user_prediction === choice && match.user_points === 3;
     const isWrong = isFinished && match.user_prediction === choice && match.user_points === 0;
+
+    if (isCorrect) return 'pred-btn correct';
+    if (isWrong) return 'pred-btn wrong';
+    if (isSelected) return 'pred-btn selected';
+    return 'pred-btn';
+  };
+
+  const getKnockoutWinnerBtnClass = (winner: 'Local' | 'Visitante') => {
+    const isSelected = currentWinner === winner;
+    const isCorrect = isFinished && currentWinner === winner && (match.user_points !== null && match.user_points >= 2);
+    const isWrong = isFinished && currentWinner === winner && match.user_points === 0;
+
+    if (isCorrect) return 'pred-btn correct';
+    if (isWrong) return 'pred-btn wrong';
+    if (isSelected) return 'pred-btn selected';
+    return 'pred-btn';
+  };
+
+  const getKnockoutMethodBtnClass = (method: '120' | 'Penales') => {
+    const isSelected = currentMethod === method;
+    const isCorrect = isFinished && currentMethod === method && match.user_points === 3;
+    const isWrong = isFinished && currentMethod === method && match.user_points === 2;
 
     if (isCorrect) return 'pred-btn correct';
     if (isWrong) return 'pred-btn wrong';
@@ -223,44 +314,99 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
               )}
             </div>
 
-            <div className="flex gap-2 justify-center">
-              <button
-                disabled={!isOpen || isSaving}
-                onClick={() => handlePredict('Local')}
-                className={`${getPredBtnClass('Local')} flex-1 max-w-[100px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {shortName(match.home_team)}
-              </button>
-              <button
-                disabled={!isOpen || isSaving}
-                onClick={() => handlePredict('Empate')}
-                className={`${getPredBtnClass('Empate')} flex-1 max-w-[80px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                Empate
-              </button>
-              <button
-                disabled={!isOpen || isSaving}
-                onClick={() => handlePredict('Visitante')}
-                className={`${getPredBtnClass('Visitante')} flex-1 max-w-[100px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                {shortName(match.away_team)}
-              </button>
-            </div>
+            {isGroupStage ? (
+              <div className="flex gap-2 justify-center">
+                <button
+                  disabled={!isOpen || isSaving}
+                  onClick={() => handlePredict('Local')}
+                  className={`${getPredBtnClass('Local')} flex-1 max-w-[100px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {shortName(match.home_team)}
+                </button>
+                <button
+                  disabled={!isOpen || isSaving}
+                  onClick={() => handlePredict('Empate')}
+                  className={`${getPredBtnClass('Empate')} flex-1 max-w-[80px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  Empate
+                </button>
+                <button
+                  disabled={!isOpen || isSaving}
+                  onClick={() => handlePredict('Visitante')}
+                  className={`${getPredBtnClass('Visitante')} flex-1 max-w-[100px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {shortName(match.away_team)}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <div className="flex gap-2 justify-center">
+                  <button
+                    disabled={!isOpen || isSaving}
+                    onClick={() => handlePredictKnockout('Local')}
+                    className={`${getKnockoutWinnerBtnClass('Local')} flex-1 max-w-[140px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    🏆 {shortName(match.home_team)}
+                  </button>
+                  <button
+                    disabled={!isOpen || isSaving}
+                    onClick={() => handlePredictKnockout('Visitante')}
+                    className={`${getKnockoutWinnerBtnClass('Visitante')} flex-1 max-w-[140px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    🏆 {shortName(match.away_team)}
+                  </button>
+                </div>
+                
+                {/* Selector de método de victoria */}
+                {currentWinner && (
+                  <div className="flex flex-col gap-1.5 mt-1">
+                    <div className="text-[10px] font-bold text-[var(--color-text-muted)] uppercase tracking-wider text-center">
+                      Método de Victoria:
+                    </div>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        disabled={!isOpen || isSaving}
+                        onClick={() => handleMethodPredict('120')}
+                        className={`${getKnockoutMethodBtnClass('120')} flex-1 py-1.5 px-3 max-w-[140px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        style={{ fontSize: '10px' }}
+                      >
+                        ⏱️ En 120 mins
+                      </button>
+                      <button
+                        disabled={!isOpen || isSaving}
+                        onClick={() => handleMethodPredict('Penales')}
+                        className={`${getKnockoutMethodBtnClass('Penales')} flex-1 py-1.5 px-3 max-w-[140px] ${!isOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        style={{ fontSize: '10px' }}
+                      >
+                        ⚽ Por penales
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* Points badge for finished */}
         {isFinished && match.user_prediction && (
-          <div className="flex justify-center mt-3">
+          <div className="flex flex-col items-center mt-3 gap-1">
             <span
               className="pill text-xs font-bold"
               style={{
-                background: match.user_points === 3 ? 'var(--color-green-dim)' : 'var(--color-red-dim)',
-                color: match.user_points === 3 ? 'var(--color-green)' : 'var(--color-red)',
+                background: (match.user_points !== null && match.user_points > 0) ? 'var(--color-green-dim)' : 'var(--color-red-dim)',
+                color: (match.user_points !== null && match.user_points > 0) ? 'var(--color-green)' : 'var(--color-red)',
               }}
             >
-              {match.user_points === 3 ? '✅ +3 puntos' : '❌ 0 puntos'}
+              {(match.user_points !== null && match.user_points > 0) ? `✅ +${match.user_points} puntos` : '❌ 0 puntos'}
             </span>
+            
+            {/* Detalle para fases de eliminación */}
+            {!isGroupStage && match.user_points !== null && match.user_points > 0 && (
+              <span className="text-[9px] text-[var(--color-text-muted)] font-medium">
+                {match.user_points === 3 ? '🎯 Acertó ganador y método' : '👍 Acertó solo ganador (2 pts)'}
+              </span>
+            )}
           </div>
         )}
 
@@ -339,7 +485,19 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
                 ) : (
                   <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
                     {groupBets.map((bet) => {
-                      const choiceEmoji = bet.prediction === 'Local' ? '🏠' : bet.prediction === 'Visitante' ? '✈️' : '🤝';
+                      let displayPred = bet.prediction;
+                      let choiceEmoji = '🤝';
+                      if (bet.prediction.startsWith('Local')) {
+                        choiceEmoji = '🏠';
+                        displayPred = bet.prediction.includes('_')
+                          ? `Local (${bet.prediction.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+                          : 'Local';
+                      } else if (bet.prediction.startsWith('Visitante')) {
+                        choiceEmoji = '✈️';
+                        displayPred = bet.prediction.includes('_')
+                          ? `Visitante (${bet.prediction.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+                          : 'Visitante';
+                      }
                       const ptsText = bet.points !== null ? ` (+${bet.points} pts)` : '';
                       return (
                         <div 
@@ -352,7 +510,7 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
                         >
                           <span className="font-semibold text-[var(--color-text-secondary)]">{bet.username}</span>
                           <span className="font-bold flex items-center gap-1" style={{ color: 'var(--color-gold)' }}>
-                            {choiceEmoji} {bet.prediction}{ptsText}
+                            {choiceEmoji} {displayPred}{ptsText}
                           </span>
                         </div>
                       );

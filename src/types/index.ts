@@ -27,6 +27,8 @@ export interface Match {
   time_remaining_ms: number | null;
   user_prediction: string | null;
   user_points: number | null;
+  winner?: string | null;
+  win_method?: string | null;
   prediction_trends?: {
     Local: number;
     Empate: number;
@@ -39,7 +41,7 @@ export interface PredictionWithMatch {
   id: number;
   user_id: number;
   match_id: number;
-  prediction: 'Local' | 'Empate' | 'Visitante';
+  prediction: string;
   points: number | null;
   created_at: string;
   updated_at: string;
@@ -78,6 +80,6 @@ export interface LeaderboardEntry {
   streak?: 'fire' | 'ice' | null;
 }
 
-export type PredictionChoice = 'Local' | 'Empate' | 'Visitante';
+export type PredictionChoice = 'Local' | 'Empate' | 'Visitante' | 'Local_120' | 'Local_Penales' | 'Visitante_120' | 'Visitante_Penales';
 export type TabType = 'partidos' | 'pronosticos' | 'ranking' | 'grupos' | 'eliminatorias' | 'admin';
 

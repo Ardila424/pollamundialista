@@ -248,13 +248,47 @@ export async function syncMatches() {
         awayTeam = cleanAway;
       }
 
+      // Mapear ganador y método para partidos eliminatorios
+      let winner = dbMatch.winner;
+      let win_method = dbMatch.win_method;
+
+      if (dbMatch.phase !== 'Grupos' && status === 'Finalizado') {
+        const isHomeWinner = espnHome?.winner === true;
+        const isAwayWinner = espnAway?.winner === true;
+        
+        if (isHomeWinner) {
+          winner = isSwapped ? 'Visitante' : 'Local';
+        } else if (isAwayWinner) {
+          winner = isSwapped ? 'Local' : 'Visitante';
+        } else {
+          // Fallback por goles
+          const hScoreStr = espnHome?.score;
+          const aScoreStr = espnAway?.score;
+          if (hScoreStr !== undefined && aScoreStr !== undefined) {
+            const hScore = parseInt(hScoreStr, 10);
+            const aScore = parseInt(aScoreStr, 10);
+            if (!isNaN(hScore) && !isNaN(aScore)) {
+              if (hScore > aScore) {
+                winner = isSwapped ? 'Visitante' : 'Local';
+              } else if (aScore > hScore) {
+                winner = isSwapped ? 'Local' : 'Visitante';
+              }
+            }
+          }
+        }
+
+        const isPens = found.status?.detail === 'FT-Pens' || found.status?.description?.toLowerCase().includes('penalties');
+        win_method = isPens ? 'Penales' : '120';
+      }
+
       // Verificar si hay cambios antes de hacer update para ahorrar escrituras en la base de datos
       const goalsChanged = homeGoals !== dbMatch.home_goals || awayGoals !== dbMatch.away_goals;
       const statusChanged = status !== dbMatch.status;
       const teamsChanged = homeTeam !== dbMatch.home_team || awayTeam !== dbMatch.away_team;
+      const winnerChanged = winner !== dbMatch.winner || win_method !== dbMatch.win_method;
 
-      if (goalsChanged || statusChanged || teamsChanged) {
-        console.log(`[ESPN Sync] Actualizando partido ${dbMatch.id} (${homeTeam} vs ${awayTeam}): Goles ${homeGoals}-${awayGoals}, Estado ${status} (Antes: Goles ${dbMatch.home_goals}-${dbMatch.away_goals}, Estado ${dbMatch.status})`);
+      if (goalsChanged || statusChanged || teamsChanged || winnerChanged) {
+        console.log(`[ESPN Sync] Actualizando partido ${dbMatch.id} (${homeTeam} vs ${awayTeam}): Goles ${homeGoals}-${awayGoals}, Estado ${status}, Ganador ${winner} (${win_method}) (Antes: Goles ${dbMatch.home_goals}-${dbMatch.away_goals}, Estado ${dbMatch.status}, Ganador ${dbMatch.winner} (${dbMatch.win_method}))`);
         
         const { error: updateError } = await supabase
           .from('matches')
@@ -263,7 +297,9 @@ export async function syncMatches() {
             away_team: awayTeam,
             home_goals: homeGoals,
             away_goals: awayGoals,
-            status: status
+            status: status,
+            winner: winner,
+            win_method: win_method
           })
           .eq('id', dbMatch.id);
 

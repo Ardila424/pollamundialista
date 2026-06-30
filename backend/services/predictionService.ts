@@ -34,7 +34,7 @@ function logPredictionAction(
 export async function savePrediction(
   userId: number,
   matchId: number,
-  prediction: 'Local' | 'Empate' | 'Visitante'
+  prediction: string
 ): Promise<{ success: boolean; error?: string; prediction?: Prediction }> {
   // 1. Verificar que el partido existe
   const match = await getMatchById(matchId);

@@ -20,10 +20,14 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       return;
     }
 
-    const validPredictions = ['Local', 'Empate', 'Visitante'];
+    const validPredictions = [
+      'Local', 'Empate', 'Visitante', 
+      'Local_120', 'Local_Penales', 
+      'Visitante_120', 'Visitante_Penales'
+    ];
     if (!prediction || !validPredictions.includes(prediction)) {
       res.status(400).json({
-        error: 'prediction debe ser "Local", "Empate" o "Visitante"',
+        error: 'prediction debe ser "Local", "Empate", "Visitante" o formato de fase eliminatoria (ej. "Local_120")',
       });
       return;
     }

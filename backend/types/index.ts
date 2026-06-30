@@ -19,13 +19,15 @@ export interface Match {
   home_goals: number | null;
   away_goals: number | null;
   status: 'Pendiente' | 'En_Progreso' | 'Finalizado';
+  winner?: string | null;
+  win_method?: string | null;
 }
 
 export interface Prediction {
   id: number;
   user_id: number;
   match_id: number;
-  prediction: 'Local' | 'Empate' | 'Visitante';
+  prediction: string;
   points: number | null;
   created_at: string;
   updated_at: string;
