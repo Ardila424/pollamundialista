@@ -73,8 +73,18 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
       // Traducir predicción a texto legible
       const translatePrediction = (pred: string | null, match: any) => {
         if (!pred) return null;
-        if (pred === 'Local') return `Gana: ${match?.home_team || '?'}`;
-        if (pred === 'Visitante') return `Gana: ${match?.away_team || '?'}`;
+        if (pred.startsWith('Local')) {
+          const methodSuffix = pred.includes('_')
+            ? ` (${pred.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+            : '';
+          return `Gana: ${match?.home_team || '?'}${methodSuffix}`;
+        }
+        if (pred.startsWith('Visitante')) {
+          const methodSuffix = pred.includes('_')
+            ? ` (${pred.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+            : '';
+          return `Gana: ${match?.away_team || '?'}${methodSuffix}`;
+        }
         return 'Empate';
       };
 
