@@ -24,6 +24,22 @@ function cleanName(name: string | null | undefined): string {
   return TEAM_TRANSLATIONS[name] || name;
 }
 
+function isPlaceholder(name: string | null | undefined): boolean {
+  if (!name) return true;
+  const cleaned = name.trim().toLowerCase();
+  return (
+    cleaned === 'por definir' ||
+    cleaned.includes('winner') ||
+    cleaned.includes('runner-up') ||
+    cleaned.includes('3rd') ||
+    cleaned.includes('3ro') ||
+    cleaned.includes('1ro') ||
+    cleaned.includes('2do') ||
+    cleaned.includes('grupo') ||
+    cleaned.includes('group')
+  );
+}
+
 export async function syncMatches() {
   console.log('🔄 Iniciando sincronización de partidos desde ESPN Scores...');
 
@@ -59,12 +75,18 @@ export async function syncMatches() {
       const matchDate = new Date(match.match_date);
       if (match.status === 'En_Progreso') {
         datesToSync.add(formatDate(matchDate));
+        const prevDate = new Date(matchDate);
+        prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+        datesToSync.add(formatDate(prevDate));
       }
       
       const diffTime = Math.abs(matchDate.getTime() - now.getTime());
       const diffDays = diffTime / (1000 * 60 * 60 * 24);
       if (match.status === 'Pendiente' && diffDays <= 1.5) {
         datesToSync.add(formatDate(matchDate));
+        const prevDate = new Date(matchDate);
+        prevDate.setUTCDate(prevDate.getUTCDate() - 1);
+        datesToSync.add(formatDate(prevDate));
       }
     }
 
@@ -215,10 +237,10 @@ export async function syncMatches() {
       let homeTeam = dbMatch.home_team;
       let awayTeam = dbMatch.away_team;
 
-      if (dbMatch.home_team === 'Por definir' && cleanHome && cleanHome !== 'Por definir') {
+      if (isPlaceholder(dbMatch.home_team) && cleanHome && !isPlaceholder(cleanHome)) {
         homeTeam = cleanHome;
       }
-      if (dbMatch.away_team === 'Por definir' && cleanAway && cleanAway !== 'Por definir') {
+      if (isPlaceholder(dbMatch.away_team) && cleanAway && !isPlaceholder(cleanAway)) {
         awayTeam = cleanAway;
       }
 
