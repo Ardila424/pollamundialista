@@ -66,26 +66,47 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
       });
     }
 
-    // Cargar estadísticas de apuestas para todos los partidos en una sola consulta
+    // Cargar estadísticas de apuestas para todos los partidos paginando de 1000 en 1000
     const { default: supabase } = await import('../config/supabase.js');
-    const { data: allPredictions, error: predError } = await supabase
-      .from('predictions')
-      .select('match_id, prediction');
+    let allPredictions: any[] = [];
+    let from = 0;
+    const limit = 1000;
+    let hasMore = true;
+
+    while (hasMore) {
+      const { data, error: predError } = await supabase
+        .from('predictions')
+        .select('match_id, prediction')
+        .range(from, from + limit - 1);
+
+      if (predError) {
+        console.error('Error al obtener predicciones en tendencias:', predError.message);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allPredictions = allPredictions.concat(data);
+        from += limit;
+        if (data.length < limit) {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
+    }
 
     const trendsMap: Record<number, { Local: number; Empate: number; Visitante: number; total: number }> = {};
-    if (!predError && allPredictions) {
-      allPredictions.forEach((p) => {
-        const mId = p.match_id;
-        const pred = p.prediction as 'Local' | 'Empate' | 'Visitante';
-        if (!trendsMap[mId]) {
-          trendsMap[mId] = { Local: 0, Empate: 0, Visitante: 0, total: 0 };
-        }
-        if (trendsMap[mId][pred] !== undefined) {
-          trendsMap[mId][pred]++;
-          trendsMap[mId].total++;
-        }
-      });
-    }
+    allPredictions.forEach((p) => {
+      const mId = p.match_id;
+      const pred = p.prediction as 'Local' | 'Empate' | 'Visitante';
+      if (!trendsMap[mId]) {
+        trendsMap[mId] = { Local: 0, Empate: 0, Visitante: 0, total: 0 };
+      }
+      if (trendsMap[mId][pred] !== undefined) {
+        trendsMap[mId][pred]++;
+        trendsMap[mId].total++;
+      }
+    });
 
     // Enriquecer cada partido con el pronóstico del usuario y tendencias
     const userId = req.user!.userId;
