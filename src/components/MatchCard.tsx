@@ -447,7 +447,9 @@ export default function MatchCard({ match, onPredictionSaved }: MatchCardProps) 
             {/* Labels */}
             <div className="flex justify-between text-[9px] text-[var(--color-text-secondary)] font-semibold">
               <span className="flex items-center gap-0.5">🏠 {match.prediction_trends.Local}%</span>
-              <span className="flex items-center gap-0.5">🤝 {match.prediction_trends.Empate}%</span>
+              {isGroupStage && (
+                <span className="flex items-center gap-0.5">🤝 {match.prediction_trends.Empate}%</span>
+              )}
               <span className="flex items-center gap-0.5">✈️ {match.prediction_trends.Visitante}%</span>
             </div>
           </div>

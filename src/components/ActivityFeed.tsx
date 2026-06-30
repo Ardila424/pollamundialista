@@ -99,6 +99,21 @@ export default function ActivityFeed() {
     }
   };
 
+  const formatLogPrediction = (pred: string | null) => {
+    if (!pred) return '';
+    if (pred.startsWith('Local')) {
+      return pred.includes('_')
+        ? `Local (${pred.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+        : 'Local';
+    }
+    if (pred.startsWith('Visitante')) {
+      return pred.includes('_')
+        ? `Visitante (${pred.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+        : 'Visitante';
+    }
+    return pred;
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -221,19 +236,19 @@ export default function ActivityFeed() {
                 <div className="text-[0.8125rem]">
                   {log.action === 'NUEVA' && log.new_prediction && (
                     <span>
-                      Apostó → <span className="font-bold" style={{ color: 'var(--color-green)' }}>{log.new_prediction}</span>
+                      Apostó → <span className="font-bold" style={{ color: 'var(--color-green)' }}>{formatLogPrediction(log.new_prediction)}</span>
                     </span>
                   )}
                   {log.action === 'ACTUALIZADA' && (
                     <span>
-                      <span style={{ color: 'var(--color-red)', textDecoration: 'line-through' }}>{log.old_prediction}</span>
+                      <span style={{ color: 'var(--color-red)', textDecoration: 'line-through' }}>{formatLogPrediction(log.old_prediction)}</span>
                       {' → '}
-                      <span className="font-bold" style={{ color: 'var(--color-green)' }}>{log.new_prediction}</span>
+                      <span className="font-bold" style={{ color: 'var(--color-green)' }}>{formatLogPrediction(log.new_prediction)}</span>
                     </span>
                   )}
                   {log.action === 'ELIMINADA' && log.old_prediction && (
                     <span>
-                      Quitó → <span style={{ color: 'var(--color-red)', textDecoration: 'line-through' }}>{log.old_prediction}</span>
+                      Quitó → <span style={{ color: 'var(--color-red)', textDecoration: 'line-through' }}>{formatLogPrediction(log.old_prediction)}</span>
                     </span>
                   )}
                 </div>

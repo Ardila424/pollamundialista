@@ -1036,33 +1036,41 @@ export default function DashboardPage() {
                 )}
 
                 {auditData && (
-                  <div className="space-y-4">
-                    {/* Tarjeta resumen del partido */}
-                    <div className="p-4 bg-[var(--color-bg-dark)]/80 border border-[var(--color-border)] rounded-xl flex items-center justify-between">
-                      <div>
-                        <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Partido Auditado</div>
-                        <div className="text-sm font-extrabold text-[var(--color-text-primary)]">
-                          {auditData.match.home_team} {auditData.match.home_goals} - {auditData.match.away_goals} {auditData.match.away_team}
-                        </div>
-                      </div>
-                      <div className="text-right">
+                       <div className="text-right">
                         <div className="text-[9px] text-[var(--color-text-muted)] uppercase tracking-wider font-bold">Resultado Real</div>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold ${
-                          auditData.match.home_goals > auditData.match.away_goals 
-                            ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border border-[var(--color-gold-dim)]'
-                            : auditData.match.home_goals === auditData.match.away_goals
-                            ? 'bg-slate-800 text-slate-200 border border-slate-700'
-                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                        }`}>
-                          {auditData.match.home_goals > auditData.match.away_goals 
-                            ? 'Local' 
-                            : auditData.match.home_goals === auditData.match.away_goals 
-                            ? 'Empate' 
-                            : 'Visitante'}
-                        </span>
+                        {auditData.match.phase === 'Grupos' ? (
+                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold ${
+                            auditData.match.home_goals > auditData.match.away_goals 
+                              ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border border-[var(--color-gold-dim)]'
+                              : auditData.match.home_goals === auditData.match.away_goals
+                              ? 'bg-slate-800 text-slate-200 border border-slate-700'
+                              : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                          }`}>
+                            {auditData.match.home_goals > auditData.match.away_goals 
+                              ? 'Local' 
+                              : auditData.match.home_goals === auditData.match.away_goals 
+                              ? 'Empate' 
+                              : 'Visitante'}
+                          </span>
+                        ) : (
+                          (() => {
+                            const winner = auditData.match.winner || (auditData.match.home_goals > auditData.match.away_goals ? 'Local' : 'Visitante');
+                            const method = auditData.match.win_method === 'Penales' ? 'Penales' : '120 min';
+                            const isHome = winner === 'Local';
+                            return (
+                              <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-extrabold ${
+                                isHome 
+                                  ? 'bg-[var(--color-gold-dim)] text-[var(--color-gold)] border border-[var(--color-gold-dim)]'
+                                  : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              }`}>
+                                {isHome ? 'Local' : 'Visitante'} ({method})
+                              </span>
+                            );
+                          })()
+                        )}
                       </div>
                     </div>
-
+ 
                     {/* Tabla de auditoría */}
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs border-collapse">
@@ -1077,7 +1085,6 @@ export default function DashboardPage() {
                         </thead>
                         <tbody>
                           {auditData.users.map((u: any) => {
-                            const isCorrect = u.earnedPoints === 3;
                             return (
                               <tr key={u.userId} className="border-b border-[var(--color-border)]/30 hover:bg-white/5 transition-colors">
                                 <td className="py-3 font-bold text-[var(--color-text-primary)]">
@@ -1086,7 +1093,15 @@ export default function DashboardPage() {
                                 <td className="py-3 text-center">
                                   {u.prediction ? (
                                     <span className="px-2 py-0.5 rounded-md text-[10px] bg-slate-800 text-slate-200 border border-slate-700">
-                                      {u.prediction === 'Local' ? '🏠 Local' : u.prediction === 'Empate' ? '🤝 Empate' : '✈️ Visitante'}
+                                      {u.prediction.startsWith('Local') ? (
+                                        u.prediction.includes('_') 
+                                          ? `🏠 Local (${u.prediction.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+                                          : '🏠 Local'
+                                      ) : u.prediction.startsWith('Visitante') ? (
+                                        u.prediction.includes('_')
+                                          ? `✈️ Visitante (${u.prediction.split('_')[1] === '120' ? '120 min' : 'Penales'})`
+                                          : '✈️ Visitante'
+                                      ) : '🤝 Empate'}
                                     </span>
                                   ) : (
                                     <span className="text-[var(--color-text-muted)] text-[10px] italic">No apostó</span>
@@ -1094,15 +1109,14 @@ export default function DashboardPage() {
                                 </td>
                                 <td className="py-3 text-center font-extrabold">
                                   {u.earnedPoints !== null ? (
-                                    isCorrect ? (
-                                      <span className="text-[var(--color-green)] font-extrabold">+3 pts</span>
+                                    u.earnedPoints > 0 ? (
+                                      <span className="text-[var(--color-green)] font-extrabold">+{u.earnedPoints} pts</span>
                                     ) : (
                                       <span className="text-[var(--color-red)]">0 pts</span>
                                     )
                                   ) : (
                                     <span className="text-amber-400 italic">No calculado</span>
                                   )}
-                                </td>
                                 <td className="py-3 text-center text-[var(--color-text-muted)] font-medium">
                                   {u.pointsBefore} pts
                                 </td>
