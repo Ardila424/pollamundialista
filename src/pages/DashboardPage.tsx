@@ -36,6 +36,7 @@ export default function DashboardPage() {
   // Matches
   const [matches, setMatches] = useState<Match[]>([]);
   const [filterPendingOnly, setFilterPendingOnly] = useState(false);
+  const [selectedPhase, setSelectedPhase] = useState<string>('all');
   const [matchesLoading, setMatchesLoading] = useState(true);
 
   // Predictions
@@ -185,11 +186,13 @@ export default function DashboardPage() {
     if (activeTab === 'admin') loadAdminUsers();
   }, [activeTab, loadPredictions, loadLeaderboard, loadAdminUsers]);
 
-  // Filter matches based on selected filters (like pending to play only)
+  // Filter matches based on selected filters (like pending to play only and phase)
   const filteredMatches = matches.filter((match) => {
-    if (filterPendingOnly) {
-      // Un partido falta por jugarse si su estado es 'Pendiente'
-      return match.status === 'Pendiente';
+    if (filterPendingOnly && match.status !== 'Pending' && match.status !== 'Pendiente') {
+      return false;
+    }
+    if (selectedPhase !== 'all' && match.phase !== selectedPhase) {
+      return false;
     }
     return true;
   });
@@ -410,26 +413,61 @@ export default function DashboardPage() {
             )}
 
             {/* Filter chips */}
-            <div className="flex gap-2 pb-4">
-              <button
-                id="filter-all"
-                onClick={() => setFilterPendingOnly(false)}
-                className={`phase-chip ${!filterPendingOnly ? 'active' : ''}`}
-              >
-                Todos los partidos
-              </button>
+            <div className="flex flex-col gap-3 mb-6">
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  id="filter-all"
+                  onClick={() => setFilterPendingOnly(false)}
+                  className={`phase-chip ${!filterPendingOnly ? 'active' : ''}`}
+                >
+                  Todos los partidos
+                </button>
 
-              <button
-                id="filter-pending"
-                onClick={() => setFilterPendingOnly(true)}
-                className={`phase-chip ${filterPendingOnly ? 'active' : ''}`}
-                style={{
-                  borderColor: filterPendingOnly ? 'var(--color-gold)' : undefined,
-                  color: filterPendingOnly ? 'var(--color-gold)' : undefined,
+                <button
+                  id="filter-pending"
+                  onClick={() => setFilterPendingOnly(true)}
+                  className={`phase-chip ${filterPendingOnly ? 'active' : ''}`}
+                  style={{
+                    borderColor: filterPendingOnly ? 'var(--color-gold)' : undefined,
+                    color: filterPendingOnly ? 'var(--color-gold)' : undefined,
+                  }}
+                >
+                  ⏳ Por jugar
+                </button>
+              </div>
+
+              {/* Filtro por Fase */}
+              <div 
+                className="flex gap-2 overflow-x-auto pb-1.5 scrollbar-none" 
+                style={{ 
+                  borderTop: '1px solid rgba(255, 255, 255, 0.05)', 
+                  paddingTop: '10px' 
                 }}
               >
-                ⏳ Por jugar
-              </button>
+                {[
+                  { id: 'all', label: '🌍 Todas las fases' },
+                  { id: 'Grupos', label: '📊 Grupos' },
+                  { id: 'Treintaidosavos', label: '⚽ R32 (16avos)' },
+                  { id: 'Octavos', label: '🌳 Octavos' },
+                  { id: 'Cuartos', label: '⚡ Cuartos' },
+                  { id: 'Semifinales', label: '🔥 Semis' },
+                  { id: 'Tercer Puesto', label: '🥉 3er Puesto' },
+                  { id: 'Final', label: '👑 Final' }
+                ].map(phase => (
+                  <button
+                    key={phase.id}
+                    onClick={() => setSelectedPhase(phase.id)}
+                    className={`phase-chip ${selectedPhase === phase.id ? 'active' : ''}`}
+                    style={{
+                      borderColor: selectedPhase === phase.id ? 'var(--color-cyan)' : undefined,
+                      color: selectedPhase === phase.id ? 'var(--color-cyan)' : undefined,
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {phase.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Matches */}
