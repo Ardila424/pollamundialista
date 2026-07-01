@@ -188,7 +188,7 @@ export default function DashboardPage() {
 
   // Filter matches based on selected filters (like pending to play only and phase)
   const filteredMatches = matches.filter((match) => {
-    if (filterPendingOnly && match.status !== 'Pending' && match.status !== 'Pendiente') {
+    if (filterPendingOnly && match.status !== 'Pendiente') {
       return false;
     }
     if (selectedPhase !== 'all' && match.phase !== selectedPhase) {
