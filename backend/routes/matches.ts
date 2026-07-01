@@ -98,7 +98,9 @@ router.get('/', authMiddleware, async (req: Request, res: Response): Promise<voi
     const trendsMap: Record<number, { Local: number; Empate: number; Visitante: number; total: number }> = {};
     allPredictions.forEach((p) => {
       const mId = p.match_id;
-      const pred = p.prediction as 'Local' | 'Empate' | 'Visitante';
+      const rawPred = p.prediction || '';
+      const pred = (rawPred.includes('_') ? rawPred.split('_')[0] : rawPred) as 'Local' | 'Empate' | 'Visitante';
+      
       if (!trendsMap[mId]) {
         trendsMap[mId] = { Local: 0, Empate: 0, Visitante: 0, total: 0 };
       }
