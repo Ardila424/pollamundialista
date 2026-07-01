@@ -169,17 +169,34 @@ router.get('/match-audit/:matchId', authMiddleware, adminOnly, async (req: Reque
     const targetIndex = allMatches.findIndex(m => m.id === matchId);
     const priorMatchIds = allMatches.slice(0, targetIndex).map(m => m.id);
 
-    // 3. Obtener todas las predicciones de los partidos prioritarios y del partido objetivo
+    // 3. Obtener todas las predicciones de los partidos prioritarios y del partido objetivo (paginado para superar límite de 1000)
     const allRelevantMatchIds = [...priorMatchIds, matchId];
-    
-    const { data: predictions, error: predError } = await supabase
-      .from('predictions')
-      .select('user_id, match_id, prediction, points')
-      .in('match_id', allRelevantMatchIds);
+    let predictions: any[] = [];
+    let from = 0;
+    const limit = 1000;
+    let hasMore = true;
 
-    if (predError) {
-      res.status(500).json({ error: `Error al obtener predicciones: ${predError.message}` });
-      return;
+    while (hasMore) {
+      const { data: chunk, error: predError } = await supabase
+        .from('predictions')
+        .select('user_id, match_id, prediction, points')
+        .in('match_id', allRelevantMatchIds)
+        .range(from, from + limit - 1);
+
+      if (predError) {
+        res.status(500).json({ error: `Error al obtener predicciones: ${predError.message}` });
+        return;
+      }
+
+      if (chunk && chunk.length > 0) {
+        predictions = [...predictions, ...chunk];
+        from += limit;
+        if (chunk.length < limit) {
+          hasMore = false;
+        }
+      } else {
+        hasMore = false;
+      }
     }
 
     // 4. Calcular para cada usuario
